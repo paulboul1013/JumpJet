@@ -53,3 +53,29 @@ $(function () {
         log("char: " + next_char);
     }
 });
+
+//Token class
+//type : Token type
+//text:  actual text make this token
+function Token(type, text) {
+    this.type = type;
+    this.text = text;
+}
+
+Token.tokens = {}
+Token.tokens.EOS_TOKEN = 1; //end of stream
+
+//adding a new token by plus 1 easily
+Token.tokens.COLON_TOKEN = Token.tokens.EOS_TOKEN + 1;
+Token.tokens.SEMICOLON_TOKEN = Token.tokens.COLON_TOKEN + 1;
+Token.tokens.LEFTPAREN_TOKEN = Token.tokens.SEMICOLON_TOKEN + 1;
+Token.tokens.RIGHTPAREN_TOKEN = Token.tokens.LEFTPAREN_TOKEN + 1;
+Token.tokens.LEFTBRACE_TOKEN = Token.tokens.RIGHTPAREN_TOKEN + 1;
+Token.tokens.RIGHTBRACE_TOKEN = Token.tokens.LEFTBRACE_TOKEN + 1;
+Token.tokens.MOD_TOKEN = Token.tokens.RIGHTBRACE_TOKEN + 1;
+Token.backwardmap = {}; //for inverse look-up
+
+
+for (var x in Token.tokens) {
+    Token.backwardmap[Token.tokens[x]] = x;
+}
