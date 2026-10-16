@@ -27,6 +27,6 @@ export function compile(source) {
     return emit(analyzed.program);
 }
 
-export function run(program) {
-    return execute(program);
+export function run(program, options) {
+    return execute(program, options);
 }
