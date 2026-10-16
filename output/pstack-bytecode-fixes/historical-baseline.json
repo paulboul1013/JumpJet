@@ -1,0 +1,100 @@
+{
+  "node": "v24.21.0",
+  "characterizationCount": 9,
+  "observations": [
+    {
+      "name": "source-to-result baseline",
+      "kind": "baseline",
+      "result": true
+    },
+    {
+      "name": "identifier constructor",
+      "kind": "gap",
+      "source": "let constructor = 1; constructor;",
+      "diagnostic": {
+        "stage": "parser",
+        "message": "Expected an identifier after 'let'.",
+        "start": 4,
+        "end": 15
+      }
+    },
+    {
+      "name": "identifier toString",
+      "kind": "gap",
+      "source": "let toString = 1; toString;",
+      "diagnostic": {
+        "stage": "parser",
+        "message": "Expected an identifier after 'let'.",
+        "start": 4,
+        "end": 12
+      }
+    },
+    {
+      "name": "assignment before inner declaration",
+      "kind": "gap",
+      "source": "let value = 1; { value = 2; let value = 3; } value;",
+      "jumpjet": 2,
+      "native": "ReferenceError before initialization"
+    },
+    {
+      "name": "jump into operand",
+      "kind": "gap",
+      "program": {
+        "version": 1,
+        "constants": [
+          42,
+          42,
+          42,
+          42,
+          42,
+          42,
+          42,
+          42,
+          42
+        ],
+        "code": [
+          0,
+          0,
+          20,
+          5,
+          0,
+          8,
+          8
+        ],
+        "slotCount": 0
+      },
+      "instructionStarts": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "target": 5,
+      "result": 42
+    },
+    {
+      "name": "sparse constant pool",
+      "kind": "gap",
+      "constantPool": "one hole",
+      "resultType": "undefined"
+    },
+    {
+      "name": "unreachable invalid opcode",
+      "kind": "boundary-policy",
+      "trailingOpcode": 999,
+      "result": 42
+    },
+    {
+      "name": "deep source escapes diagnostics",
+      "kind": "gap",
+      "parenthesisDepth": 20000,
+      "result": "RangeError, rather than diagnostics"
+    },
+    {
+      "name": "backward jump has no execution limit",
+      "kind": "future-loop-risk",
+      "program": "Jump 0",
+      "termination": "parent killed child after 750 ms"
+    }
+  ]
+}

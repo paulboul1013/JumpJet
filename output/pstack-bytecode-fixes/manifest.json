@@ -1,0 +1,33 @@
+{
+  "createdAt": "2026-10-16T11:24:42.108357+00:00",
+  "note": "before/ contains the frozen working-tree source copied before implementation; screenshots are real browser captures, not generated images.",
+  "sha256": {
+    "src/analyzer.js": "a767dbeebc576854aea9301835769119a677d2d8636420ba03d1ea44292f5faf",
+    "src/bytecode.js": "652ed2156345004ee1476beba8c34880958cc9a594c4a4021dbfdac6d0d6ccac",
+    "src/compiler.js": "b808e4368c7d9789190a89633ba41c3bae2f4d726cea8701bcaedd70723c62a5",
+    "src/index.js": "792f1ec1f7ef621b5a8e571acd31c97ffd7ade4925d815ae81f8602747af9405",
+    "src/lexer.js": "6ae2268e71e8ee34794f296a5ccf99de5f161d052f37c91413f2f4a8c8b2e584",
+    "src/parser.js": "88183c6767ce37c58afb1ddd60967a4585ed8d574a43b25e44177d051fd30c1f",
+    "src/verifier.js": "7bec04850b5bf1e07b2f8edbf3b3b1d1518faf76f10a86b28d94e598f3353c6e",
+    "src/vm.js": "ada62081a005e3ebf151b23054d90557c69a86f6cd70c2c89c88cfa66e327c29",
+    "web/app.js": "3ee232791a2a29bd27181728132234a4e584d885ca87fb7d7c999dbd37db3eff",
+    "output/pstack-bytecode-fixes/before/src/analyzer.js": "072028eb731ec66590c1477b1872c842694d9e3c9f7248e86723b4c3640cdda6",
+    "output/pstack-bytecode-fixes/before/src/bytecode.js": "832e66544cc93512b065f9046b1060467dd51e2cfc0aa356133c815cefd5262c",
+    "output/pstack-bytecode-fixes/before/src/compiler.js": "b808e4368c7d9789190a89633ba41c3bae2f4d726cea8701bcaedd70723c62a5",
+    "output/pstack-bytecode-fixes/before/src/index.js": "b10023930003fd11a85994554a290eaaa711cf8ac720bbce0357c600afc66b1a",
+    "output/pstack-bytecode-fixes/before/src/lexer.js": "3c2aa5279d08605ca30c8c819ab7d1f46341a1f8dc4496504d42ef332f2af30e",
+    "output/pstack-bytecode-fixes/before/src/parser.js": "46abb45f3ae0a9523c510c4073acf7c69ffbd3c00f50b07ac7774a379c018760",
+    "output/pstack-bytecode-fixes/before/src/vm.js": "8ec16e7fad64ec559b18c449ab5aea8ce572715539d6b1c90afe13b5f7c45f7f",
+    "output/pstack-bytecode-fixes/before/web/app.js": "dab263e1ea9eca10fd372593800748b63af4eb7edec226c1be6874ec8c932bd3",
+    "output/playwright/bytecode-fixes/engine-after.png": "410b71c4bb748464d81235e1913b7a427b3b374f02b4b021461e2d46a3e1477b",
+    "output/playwright/bytecode-fixes/engine-before.png": "dc818c0a0dc3834c2958de88ad6150d765e008b0914c4e92d07ecece7636b32b",
+    "output/playwright/bytecode-fixes/identifiers-after.png": "edf2e3b3618ef0a28975395dd0f72efd44986f1d3ac2e6998f96b589a6829838",
+    "output/playwright/bytecode-fixes/identifiers-before.png": "eb0f9766e1f467a2d341dcdf73a9a7469ee1695e28f9d6ab360e8bb006c1b509",
+    "output/playwright/bytecode-fixes/report-preview.png": "51ebe7fbaac57fcc7fe3b097d5e1ad6ff73bd011adf21066e0cfc1b0be327e3c",
+    "output/playwright/bytecode-fixes/tdz-after.png": "ba92dd156b6f644ab132d3e6fdad24fcb091f337a0febf2dfe3cc955d9d9ec0c",
+    "output/playwright/bytecode-fixes/tdz-before.png": "e3b218b8d7f82713ace8ea44265379c23a9a598373968706631dd47aec902752",
+    "tests/engine-boundaries.test.js": "c92a26316656d29d88ec5396aba012795e9c2533635e5b181839cd5244e23794",
+    "output/pstack-bytecode-fixes/browser-before.json": "2a4e5ff20c9180a2eb85218fe5982aaae4ec444a768a3bbee9250c4c6054bc0f",
+    "output/pstack-bytecode-fixes/browser-after.json": "d1b05cb1b20f980ac5b64b36fbbf2d19580c33a0a66ab11708c29e0e9100a5f9"
+  }
+}

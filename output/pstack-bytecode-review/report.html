@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="blueprint" data-mode="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="Answer me with HTML 0.2.2">
+<title>JumpJet bytecode engine 架構檢查</title>
+<style>
+html[data-theme="blueprint"], html[data-theme="blueprint"][data-mode="light"] {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --radius: 0px;
+  --shadow: none;
+  --bw: 1.5px;
+  --head-font: var(--font-sans);
+  --bg: #f6f6f3;
+  --paper: #ffffff;
+  --ink: #16181d;
+  --ink-2: #4b5260;
+  --ink-3: #8b929e;
+  --line: #1d2026;
+  --line-2: #d6dae1;
+  --fill: #f3f5f8;
+  --accent: #1d5fbf;
+  --accent-bg: #e4ecf8;
+  --ok: #1d5fbf;
+  --ok-bg: #e4ecf8;
+  --err: #c62828;
+  --err-bg: #fbeaea;
+  --warn: #a8620a;
+  --warn-bg: #fdf3e2;
+  --head-bg: #16181d;
+  --head-fg: #ffffff;
+}
+html[data-theme="blueprint"][data-mode="dark"] {
+  --bg: #081322;
+  --paper: #0d1c31;
+  --ink: #e6edf7;
+  --ink-2: #a9b8cc;
+  --ink-3: #6b7f99;
+  --line: #c9d6e8;
+  --line-2: #23385a;
+  --fill: #12253f;
+  --accent: #6ea8ff;
+  --accent-bg: #16305a;
+  --ok: #6ea8ff;
+  --ok-bg: #16305a;
+  --err: #ff7070;
+  --err-bg: #3b1620;
+  --warn: #f0b14a;
+  --warn-bg: #3a2a10;
+  --head-bg: #e6edf7;
+  --head-fg: #081322;
+}
+@media (prefers-color-scheme: dark) {
+html[data-theme="blueprint"][data-mode="auto"] {
+  --bg: #081322;
+  --paper: #0d1c31;
+  --ink: #e6edf7;
+  --ink-2: #a9b8cc;
+  --ink-3: #6b7f99;
+  --line: #c9d6e8;
+  --line-2: #23385a;
+  --fill: #12253f;
+  --accent: #6ea8ff;
+  --accent-bg: #16305a;
+  --ok: #6ea8ff;
+  --ok-bg: #16305a;
+  --err: #ff7070;
+  --err-bg: #3b1620;
+  --warn: #f0b14a;
+  --warn-bg: #3a2a10;
+  --head-bg: #e6edf7;
+  --head-fg: #081322;
+}
+}
+
+html[data-theme="shadcn"], html[data-theme="shadcn"][data-mode="light"] {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --radius: 8px;
+  --shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --bw: 1px;
+  --head-font: var(--font-sans);
+  --bg: #fafafa;
+  --paper: #ffffff;
+  --ink: #09090b;
+  --ink-2: #71717a;
+  --ink-3: #a1a1aa;
+  --line: #e4e4e7;
+  --line-2: #f0f0f2;
+  --fill: #f4f4f5;
+  --accent: #2563eb;
+  --accent-bg: #eff6ff;
+  --ok: #16a34a;
+  --ok-bg: #f0fdf4;
+  --err: #dc2626;
+  --err-bg: #fef2f2;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --head-bg: #18181b;
+  --head-fg: #fafafa;
+}
+html[data-theme="shadcn"][data-mode="dark"] {
+  --bg: #09090b;
+  --paper: #121215;
+  --ink: #fafafa;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --line: #27272a;
+  --line-2: #1c1c1f;
+  --fill: #18181b;
+  --accent: #60a5fa;
+  --accent-bg: #172554;
+  --ok: #4ade80;
+  --ok-bg: #052e16;
+  --err: #f87171;
+  --err-bg: #450a0a;
+  --warn: #fbbf24;
+  --warn-bg: #451a03;
+  --head-bg: #fafafa;
+  --head-fg: #18181b;
+}
+@media (prefers-color-scheme: dark) {
+html[data-theme="shadcn"][data-mode="auto"] {
+  --bg: #09090b;
+  --paper: #121215;
+  --ink: #fafafa;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --line: #27272a;
+  --line-2: #1c1c1f;
+  --fill: #18181b;
+  --accent: #60a5fa;
+  --accent-bg: #172554;
+  --ok: #4ade80;
+  --ok-bg: #052e16;
+  --err: #f87171;
+  --err-bg: #450a0a;
+  --warn: #fbbf24;
+  --warn-bg: #451a03;
+  --head-bg: #fafafa;
+  --head-fg: #18181b;
+}
+}
+
+/* Answer me with HTML base — 只引用主题变量，禁止写死颜色（主题 token 见 themes/index.js） */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-sans); font-size: 14px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+code, pre, kbd { font-family: var(--font-mono); }
+
+/* ── 工具栏 ─────────────────────────────── */
+.am-toolbar {
+  position: fixed; top: 12px; right: 12px; z-index: 10; display: flex; gap: 6px;
+}
+.am-btn {
+  font: 12px/1 var(--font-sans); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line-2); border-radius: var(--radius); padding: 7px 10px; cursor: pointer;
+}
+.am-btn:hover { border-color: var(--ink-3); }
+.am-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── 页头 ───────────────────────────────── */
+.am-head { margin: 0 0 20px; padding-right: 260px; }
+.am-head h1 { margin: 0; font-size: 24px; line-height: 1.25; letter-spacing: -0.01em; }
+.am-sub { margin: 4px 0 0; color: var(--ink-2); }
+.am-head-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+.am-head-meta b { font-family: var(--font-mono); font-weight: 400; color: var(--ink-3); margin-right: 6px; }
+.am-intro { margin-top: 12px; max-width: 80ch; }
+
+/* ── sheet 图纸板 ────────────────────────── */
+.am-sheet { max-width: 1680px; margin: 0 auto; padding: 32px 28px 40px; }
+.am-frame { position: relative; }
+.am-grid {
+  display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 20px; align-items: start;
+}
+.am-ruler { display: none; }
+html[data-theme="blueprint"] .am-frame { border: 1px solid var(--line); padding: 30px; }
+html[data-theme="blueprint"] .am-frame::before {
+  content: ""; position: absolute; inset: 18px; border: 1px solid var(--line); pointer-events: none;
+}
+html[data-theme="blueprint"] .am-ruler {
+  display: flex; position: absolute; font: 10px/1 var(--font-mono); color: var(--ink-3);
+}
+.am-ruler span { flex: 1; display: flex; align-items: center; justify-content: center; }
+.am-ruler--top, .am-ruler--bottom { left: 18px; right: 18px; height: 18px; }
+.am-ruler--top { top: 0; }
+.am-ruler--bottom { bottom: 0; }
+.am-ruler--left, .am-ruler--right { top: 18px; bottom: 18px; width: 18px; flex-direction: column; }
+.am-ruler--left { left: 0; }
+.am-ruler--right { right: 0; }
+.am-ruler--top span + span, .am-ruler--bottom span + span { border-left: 1px solid var(--line); }
+.am-ruler--left span + span, .am-ruler--right span + span { border-top: 1px solid var(--line); }
+
+/* ── 面板 ───────────────────────────────── */
+.am-panel {
+  background: var(--paper); border: var(--bw) solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); min-width: 0; overflow: hidden;
+}
+.am-panel-head {
+  display: flex; align-items: stretch; gap: 0; border-bottom: var(--bw) solid var(--line); min-height: 34px;
+}
+.am-panel-id {
+  display: flex; align-items: center; justify-content: center; min-width: 34px; padding: 0 8px;
+  background: var(--head-bg); color: var(--head-fg); font-weight: 600; font-size: 14px;
+}
+html[data-theme="shadcn"] .am-panel-id { border-radius: 6px; min-width: 24px; height: 24px; margin: 9px 0 9px 14px; font-size: 12px; }
+html[data-theme="shadcn"] .am-panel-head { border-bottom-width: 1px; }
+.am-panel-head h2 { margin: 0; padding: 7px 12px; font-size: 15px; font-weight: 600; flex: 1; display: flex; align-items: center; }
+.am-panel-meta { align-self: center; padding: 0 12px; font: 11px/1.3 var(--font-mono); color: var(--ink-2); text-align: right; }
+.am-panel-body { padding: 14px 16px 16px; }
+.am-panel-body > * + * { margin-top: 12px; }
+
+/* ── Markdown 正文 ───────────────────────── */
+.am-md > :first-child { margin-top: 0; }
+.am-md > :last-child { margin-bottom: 0; }
+.am-md p { margin: 0 0 8px; }
+.am-md ul, .am-md ol { margin: 0 0 8px; padding-left: 20px; }
+.am-md li + li { margin-top: 3px; }
+.am-md h3, .am-md h4 { margin: 14px 0 6px; font-size: 13px; }
+.am-md a { color: var(--accent); }
+.am-md blockquote { margin: 0 0 8px; padding: 2px 12px; border-left: 3px solid var(--line-2); color: var(--ink-2); }
+.am-md :not(pre) > code { font-size: 0.9em; background: var(--fill); padding: 1px 5px; border-radius: 4px; }
+.am-md hr { border: 0; border-top: 1px solid var(--line-2); margin: 12px 0; }
+.am-md table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.am-md th {
+  text-align: left; font: 11px/1.3 var(--font-mono); color: var(--ink-2); font-weight: 400;
+  padding: 6px 10px; border-bottom: 1px solid var(--line-2);
+}
+.am-md td { padding: 7px 10px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.am-md tbody tr:nth-child(even) td { background: var(--fill); }
+.am-table-wrap { overflow-x: auto; }
+.am-code {
+  margin: 0; padding: 12px 14px; background: var(--fill); border: 1px solid var(--line-2);
+  border-radius: var(--radius); overflow-x: auto; font-size: 12.5px; line-height: 1.5;
+}
+
+/* ── 状态徽章 ok / no / warn ──────────────── */
+.am-status { white-space: nowrap; font-weight: 500; }
+.am-status--ok { color: var(--ok); }
+.am-status--no { color: var(--err); }
+.am-status--warn { color: var(--warn); }
+.am-status-icon { display: inline-block; width: 1.1em; font-weight: 700; }
+
+/* ── callout ─────────────────────────────── */
+.am-callout {
+  border: 1px solid var(--line-2); border-left: 3px solid var(--accent); background: var(--accent-bg);
+  padding: 10px 14px; border-radius: var(--radius);
+}
+.am-callout--ok { border-left-color: var(--ok); background: var(--ok-bg); }
+.am-callout--warn { border-left-color: var(--warn); background: var(--warn-bg); }
+.am-callout--err { border-left-color: var(--err); background: var(--err-bg); }
+.am-callout-title { font-weight: 600; margin-bottom: 4px; }
+
+/* ── kv 标题栏格 ─────────────────────────── */
+.am-kv {
+  display: grid; grid-template-columns: repeat(var(--kv-cols, 2), minmax(0, 1fr)); margin: 0;
+  border-top: var(--bw) solid var(--line); border-left: var(--bw) solid var(--line);
+}
+.am-kv-cell { border-right: var(--bw) solid var(--line); border-bottom: var(--bw) solid var(--line); padding: 6px 10px 8px; min-width: 0; }
+.am-kv-cell--wide { grid-column: 1 / -1; }
+.am-kv dt { font: 11px/1.4 var(--font-mono); color: var(--ink-2); }
+.am-kv dd { margin: 2px 0 0; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.am-kv-cell--wide dd { font-size: 17px; font-weight: 600; }
+html[data-theme="shadcn"] .am-kv { border-color: var(--line); border-radius: var(--radius); overflow: hidden; }
+
+/* ── timeline ────────────────────────────── */
+.am-timeline { list-style: none; margin: 0; padding: 0; }
+.am-timeline--h { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); padding-top: 4px; }
+.am-timeline--h li { position: relative; text-align: center; padding: 0 6px; }
+.am-timeline--h li::before {
+  content: ""; position: absolute; top: 31px; left: 0; right: 0; border-top: var(--bw) solid var(--line);
+}
+.am-timeline--h li:first-child::before { left: 50%; }
+.am-timeline--h li:last-child::before { right: 50%; }
+.am-tl-when { display: block; font-size: 15px; font-weight: 500; height: 24px; }
+.am-tl-dot {
+  position: relative; display: block; width: 11px; height: 11px; margin: 2px auto 8px;
+  border: var(--bw) solid var(--line); border-radius: 50%; background: var(--paper);
+}
+.am-tl-item--hi .am-tl-dot { background: var(--accent); border-color: var(--accent); }
+.am-tl-title { display: block; font-size: 12.5px; font-weight: 500; }
+.am-tl-text { display: block; font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.am-timeline--v li { position: relative; padding: 0 0 14px 22px; }
+.am-timeline--v li::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: -6px; border-left: var(--bw) solid var(--line-2); }
+.am-timeline--v li:last-child::before { display: none; }
+.am-timeline--v .am-tl-dot { position: absolute; left: 0; top: 4px; margin: 0; }
+.am-timeline--v .am-tl-when { display: inline; height: auto; font: 12px var(--font-mono); color: var(--ink-2); margin-right: 8px; }
+.am-timeline--v .am-tl-title { display: inline; font-size: 14px; }
+.am-timeline--v .am-tl-text { margin-top: 2px; }
+
+/* ── annot 句子标注 ──────────────────────── */
+.am-annot + .am-annot { border-top: 1px solid var(--line-2); padding-top: 12px; }
+.am-annot-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.am-annot-meta { font: 11px var(--font-mono); font-weight: 400; color: var(--ink-2); }
+.am-annot-scroll { overflow-x: auto; }
+.am-annot-line {
+  position: relative; display: inline-block; white-space: pre; font: 14px/1.6 var(--font-mono);
+  padding-bottom: calc(var(--rows, 0) * 17px + 14px);
+}
+.am-annot-line--wrap { display: block; white-space: normal; padding-bottom: 10px; }
+.am-annot-line--wrap .am-seg { white-space: nowrap; }
+.am-seg { position: relative; }
+.am-seg::after {
+  content: ""; position: absolute; left: 1px; right: 1px; top: calc(100% + 1px); height: 5px;
+  border: 1px solid var(--accent); border-top: 0;
+}
+.am-seg-n {
+  position: absolute; left: 0; top: calc(100% + 8px + var(--row, 0) * 17px);
+  font: 11px/16px var(--font-sans); color: var(--accent); white-space: nowrap;
+}
+.am-seg--err { color: var(--err); }
+.am-seg--err::after { border-color: var(--err); }
+.am-seg--err .am-seg-n { color: var(--err); }
+.am-annot-caption { font-size: 12px; color: var(--ink-2); }
+
+/* ── limits 限值条 ───────────────────────── */
+.am-lim + .am-lim { margin-top: 14px; }
+.am-lim-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 4px; }
+.am-lim-val { font: 12px var(--font-mono); color: var(--accent); white-space: nowrap; }
+.am-lim-track { position: relative; height: 12px; border: 1px solid var(--line-2); background: var(--fill); border-radius: calc(var(--radius) / 2); }
+.am-lim-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-bg); border-right: 1px solid var(--accent); }
+.am-lim-mark { position: absolute; top: -4px; bottom: -4px; border-left: 2px solid var(--accent); }
+.am-lim.is-over .am-lim-fill { background: var(--err-bg); border-right-color: var(--err); }
+.am-lim.is-over .am-lim-val { color: var(--err); }
+.am-lim-ticks { position: relative; height: 16px; font: 10px/16px var(--font-mono); color: var(--ink-3); }
+.am-lim-ticks span { position: absolute; transform: translateX(-50%); }
+.am-lim-ticks span:first-child { transform: none; }
+.am-lim-note { font-size: 11px; color: var(--ink-2); margin-left: 6px; }
+
+/* ── tree 结构树 ─────────────────────────── */
+.am-tree { font-size: 13px; }
+.am-tree-root { display: flex; justify-content: center; position: relative; padding-bottom: 18px; }
+.am-tree-root::after { content: ""; position: absolute; bottom: 0; left: 50%; height: 18px; border-left: var(--bw) solid var(--line); }
+.am-tree-root--solo { padding-bottom: 12px; }
+.am-tree-root--solo::after { display: none; }
+.am-tree-box {
+  border: var(--bw) solid var(--line); background: var(--paper); padding: 6px 14px; text-align: center;
+  border-radius: var(--radius); font-weight: 600;
+}
+.am-tree-box small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.am-tree-box--root { background: var(--accent-bg); font-size: 15px; padding: 8px 28px; }
+.am-tree-cols { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); }
+.am-tree-col { position: relative; padding: 18px 8px 0; min-width: 0; }
+.am-tree-col::before { content: ""; position: absolute; top: 0; left: 0; right: 0; border-top: var(--bw) solid var(--line); }
+.am-tree-col:first-child::before { left: 50%; }
+.am-tree-col:last-child::before { right: 50%; }
+.am-tree-col::after { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: var(--bw) solid var(--line); }
+.am-tree-list, .am-tree-list ul { list-style: none; margin: 0; padding: 0; }
+.am-tree-col > .am-tree-list { margin: 8px 0 0 14px; }
+.am-tree-list ul { margin-left: 16px; }
+.am-tree-list li { position: relative; padding: 3px 0 3px 18px; }
+.am-tree-list li::before { content: ""; position: absolute; left: 0; top: 0.95em; width: 12px; border-top: 1px solid var(--ink-3); }
+.am-tree-list li::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 1px solid var(--ink-3); }
+.am-tree-list li:last-child::after { bottom: auto; height: 0.95em; }
+.am-tree-tag { font: 11px var(--font-mono); color: var(--ink-3); margin-right: 4px; }
+.am-tree code { font: 12px var(--font-mono); }
+.am-tree-sub { display: block; font-size: 11.5px; color: var(--ink-2); }
+.am-tree-hi > .am-tree-label { color: var(--accent); font-weight: 600; }
+
+/* ── 图（flow / sequence）───────────────── */
+.am-diagram { margin: 0; overflow-x: auto; text-align: center; }
+.am-diagram svg { max-width: 100%; height: auto; font-family: var(--font-sans); }
+.am-diagram text { fill: var(--ink); font-size: 13px; }
+.am-node-shape { fill: var(--paper); stroke: var(--line); stroke-width: var(--bw); }
+.am-node--hi .am-node-shape { fill: var(--accent-bg); stroke: var(--accent); }
+.am-node--hi text { fill: var(--accent); font-weight: 600; }
+.am-edge { fill: none; stroke: var(--ink-2); stroke-width: 1.3; }
+.am-edge--dashed { stroke-dasharray: 5 4; }
+.am-arrow { fill: var(--ink-2); }
+.am-edge-label rect { fill: var(--paper); }
+.am-diagram .am-edge-label text { fill: var(--accent); font-size: 11.5px; }
+.am-cluster { fill: var(--fill); stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 4 3; }
+.am-diagram .am-cluster-label { fill: var(--ink-2); font: 11px var(--font-mono); }
+.am-lifeline { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; }
+.am-actor { fill: var(--paper); stroke: var(--line); stroke-width: var(--bw); }
+.am-note { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1; }
+.am-diagram .am-step { fill: var(--ink-3); font: 10px var(--font-mono); }
+
+/* ── doc 线性讲解 ────────────────────────── */
+.am-doc { max-width: 1120px; margin: 0 auto; padding: 40px 28px 64px; }
+.am-doc-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; align-items: start; }
+.am-doc-layout--notoc { grid-template-columns: minmax(0, 1fr); max-width: 860px; }
+.am-toc { position: sticky; top: 24px; font-size: 13px; }
+.am-toc a { display: block; color: var(--ink-2); text-decoration: none; padding: 4px 0 4px 10px; border-left: 2px solid var(--line-2); }
+.am-toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+.am-doc-body > .am-panel + .am-panel { margin-top: 20px; }
+
+/* ── 响应式与打印 ─────────────────────────── */
+@media (max-width: 1100px) {
+  .am-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .am-grid > .am-panel { grid-column: auto !important; }
+  .am-grid > .am-panel.am-span-wide { grid-column: 1 / -1 !important; }
+}
+@media (max-width: 760px) {
+  .am-sheet, .am-doc { padding: 56px 12px 24px; }
+  .am-head { padding-right: 0; }
+  .am-grid { grid-template-columns: minmax(0, 1fr); }
+  .am-grid > .am-panel.am-span-wide { grid-column: auto !important; }
+  html[data-theme="blueprint"] .am-frame { padding: 0; border: 0; }
+  html[data-theme="blueprint"] .am-frame::before, html[data-theme="blueprint"] .am-ruler { display: none; }
+  .am-doc-layout { grid-template-columns: minmax(0, 1fr); }
+  .am-toc { position: static; }
+  .am-timeline--h { grid-template-columns: minmax(0, 1fr); }
+  .am-tree-cols { grid-template-columns: minmax(0, 1fr); }
+}
+.am-colophon { text-align: center; padding: 0 0 28px; font: 11px var(--font-mono); color: var(--ink-3); }
+
+@media print {
+  .am-toolbar { display: none; }
+  body { background: var(--paper); }
+  .am-panel { break-inside: avoid; box-shadow: none; }
+}
+.am-panel--bare { border: 0; background: transparent; box-shadow: none; }
+.am-panel--bare > .am-panel-body { padding: 0; }
+.am-panel--bare .am-kv { background: var(--paper); }
+
+</style>
+</head>
+<body>
+<div class="am-toolbar">
+<button class="am-btn" type="button" data-am="theme" data-labels="{&quot;blueprint&quot;:&quot;主题：图纸&quot;,&quot;shadcn&quot;:&quot;主题：卡片&quot;}">主题：图纸</button>
+<button class="am-btn" type="button" data-am="mode" data-labels="{&quot;auto&quot;:&quot;明暗：跟随系统&quot;,&quot;light&quot;:&quot;明暗：亮&quot;,&quot;dark&quot;:&quot;明暗：暗&quot;}">明暗：跟随系统</button>
+<button class="am-btn" type="button" data-am="copy" data-done="已复制 ✓">复制源稿</button>
+</div>
+<main class="am-doc">
+<header class="am-head"><h1>JumpJet bytecode engine 架構檢查</h1><p class="am-sub">保留現有分層，先修正名稱綁定與 VM 輸入契約</p><div class="am-head-meta"><span><b>date</b>2026-10-16</span><span><b>scope</b>目前工作目錄，包含未提交的 analyzer 與控制流實作</span></div></header>
+<div class="am-doc-layout">
+<nav class="am-toc" aria-label="目录"><a href="#panel-A">A · 架構方向可以保留</a><a href="#panel-B">B · 真正的入口與模組責任</a><a href="#panel-C">C · Bytecode 與執行狀態</a><a href="#panel-D">D · 語意層有兩個可重現問題</a><a href="#panel-E">E · VM 邊界驗證仍不完整</a><a href="#panel-F">F · 執行控制需要明確的邊界</a><a href="#panel-G">G · 後續架構調整的順序</a><a href="#panel-H">H · 驗證與重現</a></nav><div class="am-doc-body">
+<section class="am-panel" id="panel-A">
+<header class="am-panel-head"><span class="am-panel-id">A</span><h2>架構方向可以保留</h2></header>
+<div class="am-panel-body"><div class="am-md"><p>這是修正前的歷史報告。
+後續修正與照片請讀 <a href="../pstack-bytecode-fixes/report.html">修正證據</a>。
+重現腳本改為使用保存的修正前 source 快照。</p>
+<p>JumpJet 已有完整的 source-to-bytecode-to-result 流程。
+analyzer 分離名稱語意，compiler 負責指令生成。
+這個邊界適合目前的 number、boolean 與 if 語言切片。</p>
+<p>目前最值得處理的是正確性與執行邊界。
+我建議先修正 scope 綁定、關鍵字查找與 bytecode 驗證。
+新增函式之前，再定義 call frame 與變數生命週期。</p>
+<p>本次檢查採用 pstack 的 how、unslop 與驗證原則。
+只新增報告與重現腳本，沒有修改 engine。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-B">
+<header class="am-panel-head"><span class="am-panel-id">B</span><h2>真正的入口與模組責任</h2></header>
+<div class="am-panel-body"><figure class="am-diagram am-flow"><svg viewBox="0 0 1369 63" width="1369" height="63" role="img" aria-label="流程图：source、lexer、parser、analyzer、compiler、VM、result" xmlns="http://www.w3.org/2000/svg"><defs><marker id="am1-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="am-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs><g></g><g><path class="am-edge" d="M82.6,31.5 L117.1,31.5 Q151.6,31.5 186.1,31.5 L220.6,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="106.6" y="22.5" width="90" height="18" rx="3"/><text x="151.6" y="31.5" text-anchor="middle" dominant-baseline="central">tokens 與 span</text></g><path class="am-edge" d="M284.6,31.5 L314.8,31.5 Q345,31.5 375.2,31.5 L405.4,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="308.6" y="22.5" width="72.8" height="18" rx="3"/><text x="345" y="31.5" text-anchor="middle" dominant-baseline="central">syntax AST</text></g><path class="am-edge" d="M470.8,31.5 L502.9,31.5 Q534.9,31.5 566.9,31.5 L599,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="494.8" y="22.5" width="80.2" height="18" rx="3"/><text x="534.9" y="31.5" text-anchor="middle" dominant-baseline="central">名稱與 scope</text></g><path class="am-edge" d="M679,31.5 L717.9,31.5 Q756.9,31.5 795.8,31.5 L834.7,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="703" y="22.5" width="107.8" height="18" rx="3"/><text x="756.9" y="31.5" text-anchor="middle" dominant-baseline="central">bound AST 與 slot</text></g><path class="am-edge" d="M915.5,31.5 L953.8,31.5 Q992.1,31.5 1030.4,31.5 L1068.7,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="939.5" y="22.5" width="105.2" height="18" rx="3"/><text x="992.1" y="31.5" text-anchor="middle" dominant-baseline="central">bytecode program</text></g><path class="am-edge" d="M1132.7,31.5 L1172.2,31.5 Q1211.8,31.5 1251.3,31.5 L1290.8,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="1156.7" y="22.5" width="110.1" height="18" rx="3"/><text x="1211.8" y="31.5" text-anchor="middle" dominant-baseline="central">number 或 boolean</text></g></g><g><g class="am-node am-node--rect"><rect class="am-node-shape" x="14" y="14" width="68.6" height="35" rx="3"/><text x="48.3" y="31.5" text-anchor="middle" dominant-baseline="central">source</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="220.6" y="14" width="64" height="35" rx="3"/><text x="252.6" y="31.5" text-anchor="middle" dominant-baseline="central">lexer</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="405.4" y="14" width="65.4" height="35" rx="3"/><text x="438.1" y="31.5" text-anchor="middle" dominant-baseline="central">parser</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="599" y="14" width="80" height="35" rx="3"/><text x="639" y="31.5" text-anchor="middle" dominant-baseline="central">analyzer</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="834.7" y="14" width="80.8" height="35" rx="3"/><text x="875.1" y="31.5" text-anchor="middle" dominant-baseline="central">compiler</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="1068.7" y="14" width="64" height="35" rx="3"/><text x="1100.7" y="31.5" text-anchor="middle" dominant-baseline="central">VM</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="1290.8" y="14" width="64" height="35" rx="3"/><text x="1322.8" y="31.5" text-anchor="middle" dominant-baseline="central">result</text></g></g></svg></figure>
+<div class="am-md"><p>瀏覽器的 compileAndRun 呼叫公開的 compile，再呼叫 run。
+compile 依序執行各 phase，遇到 diagnostics 就返回。
+run 直接委派 execute。</p>
+<div class="am-table-wrap"><table>
+<thead>
+<tr>
+<th>模組</th>
+<th>擁有的責任</th>
+<th>對後續階段的承諾</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>lexer</td>
+<td>字元、關鍵字、最長運算子辨識</td>
+<td>tokens 附來源範圍</td>
+</tr>
+<tr>
+<td>parser</td>
+<td>precedence、associativity、statement 結構</td>
+<td>syntax AST 保留名稱</td>
+</tr>
+<tr>
+<td>analyzer</td>
+<td>scope、const、初始化檢查、slot 分配</td>
+<td>bound AST 的識別字已換成 slot</td>
+</tr>
+<tr>
+<td>compiler</td>
+<td>指令選擇、stack 配平、jump 回填</td>
+<td>產生可供 VM 執行的 program</td>
+</tr>
+<tr>
+<td>VM</td>
+<td>program 邊界檢查與指令執行</td>
+<td>對合法程式返回值</td>
+</tr>
+</tbody></table></div>
+<p>這些依賴沒有形成循環。
+compiler 不重做名稱查找，VM 也不依賴 AST 或 DOM。
+這是目前設計最值得保留的部分。</p>
+<p>依據：<a href="../../src/index.js">公開入口</a>、<a href="../../web/app.js">瀏覽器入口，第 95 行</a>、<a href="../../src/analyzer.js">analyzer</a>、<a href="../../src/compiler.js">compiler</a>。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-C">
+<header class="am-panel-head"><span class="am-panel-id">C</span><h2>Bytecode 與執行狀態</h2></header>
+<div class="am-panel-body"><div class="am-md"><p>program 有 version、constants、code 與 slotCount。
+code 是平坦的 JavaScript number array，沒有二進位編碼。
+共有 21 個 opcode，使用零個或一個 operand。
+jump target 是 code array 的絕對 index。</p>
+<p>每次 execute 都建立自己的 operand stack、slots 與 initializedSlots。
+instructionPointer 指向下一個待讀位置。
+各次執行沒有共用 VM 可變狀態。</p>
+<p>例如，賦值先產生值，再 Duplicate，最後 StoreSlot。
+StoreSlot 取走副本，原值保留作為賦值運算結果。
+一般 expression statement 用 Pop 丟棄結果。
+最後一個頂層 expression statement 用 Return 返回結果。</p>
+<p>analyzer 為每個宣告分配唯一 slot，離開 block 不回收。
+目前沒有函式呼叫、call frame、closure 或物件 heap。
+數值運算直接使用宿主 JavaScript 的運算子。
+目前也尚未 self-host。</p>
+<p>依據：<a href="../../src/bytecode.js">opcode 定義</a>、<a href="../../src/compiler.js">指令生成，第 69 行</a>、<a href="../../src/vm.js">執行狀態，第 30 行</a>、<a href="../../docs/specs/0003-control-flow-and-semantic-analysis.md">現行規格</a>。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-D">
+<header class="am-panel-head"><span class="am-panel-id">D</span><h2>語意層有兩個可重現問題</h2></header>
+<div class="am-panel-body"><div class="am-md"><h3>優先修正：內層宣告前的引用會綁到外層</h3>
+</div>
+<pre class="am-code"><code data-lang="js">let value = 1;
+{
+	value = 2;
+	let value = 3;
+}
+value;</code></pre>
+<div class="am-md"><p>JumpJet 成功編譯並返回 2。
+同一段程式在 Node 會因 TDZ 拋出 ReferenceError。
+analyzer 在走到宣告時才加入 binding。
+因此，前面的賦值會解析成外層 slot。</p>
+<p>最小修正是進入 scope 時先收集該 scope 的直接宣告。
+所有 binding 起初都標成未初始化。
+接著依序分析 statement，並更新初始化狀態。
+這項責任應留在 analyzer。</p>
+<p>現行規格明文描述 initializer 自我引用的 TDZ。
+上述案例揭露的是與 JavaScript block scope 的語意落差。
+規格也需要補上整個 block 的宣告可見範圍。</p>
+<p>依據：<a href="../../src/analyzer.js">resolve，第 37 行</a>、<a href="../../src/analyzer.js">宣告建立，第 129 行</a>、<a href="../../src/analyzer.js">block traversal，第 169 行</a>。</p>
+<h3>接著修正：關鍵字表讀到 Object prototype</h3>
+<p><code>let constructor = 1; constructor;</code> 會編譯失敗。
+<code>toString</code> 作為變數名稱也會失敗。
+keywords 是一般 object，查找會讀到繼承的屬性。
+Object.freeze 不會移除 prototype。</p>
+<p>改用 Map，或用 Object.hasOwn 限制查找自己的 key。
+這是 lexer 的責任，parser 不需要繞過錯誤 token。</p>
+<p>依據：<a href="../../src/lexer.js">keywords 定義，第 53 行</a>、<a href="../../src/lexer.js">查表，第 148 行</a>。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-E">
+<header class="am-panel-head"><span class="am-panel-id">E</span><h2>VM 邊界驗證仍不完整</h2></header>
+<div class="am-panel-body"><div class="am-md"><h3>Jump target 只檢查範圍</h3>
+<p>下面的 program 返回 42。
+線性解碼的指令起點是 0、2、4、6。
+target 5 指向 Constant 的 operand，VM 卻把它當作 Return。</p>
+</div>
+<pre class="am-code"><code data-lang="js">{
+	version: 1,
+	constants: Array(9).fill(42),
+	code: [0, 0, 20, 5, 0, 8, 8],
+	slotCount: 0
+}</code></pre>
+<div class="am-md"><p>目前 compiler 產生的 jump 不會觸發這個案例。
+缺口在公開 run 接受任意 program 的邊界。
+最小修正是先解碼指令，再檢查 target 是否為指令起點。
+code.length 作為 target 的既有政策可另行保留。</p>
+<h3>稀疏 constants 會讓 undefined 進入 VM</h3>
+<p>constants 為 new Array(1) 時，forEach 會跳過空洞。
+Constant 0 因此取得 undefined，Return 也直接返回 undefined。
+這違反目前 number 或 boolean 的值域契約。</p>
+<p>改用逐 index 驗證，拒絕空洞或不合法的常數。
+另外，Return 後方的未知 opcode 目前不會被檢查。
+若承諾驗證整個 program，解碼階段就需要檢查不可達指令。
+若只承諾檢查執行路徑，文件應明確說明。</p>
+<p>依據：<a href="../../src/vm.js">constants 驗證，第 17 行</a>、<a href="../../src/vm.js">jump 檢查，第 68 行</a>、<a href="../../src/vm.js">Constant，第 86 行</a>。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-F">
+<header class="am-panel-head"><span class="am-panel-id">F</span><h2>執行控制需要明確的邊界</h2></header>
+<div class="am-panel-body"><div class="am-md"><p>手寫 bytecode 的 Jump 0 會持續執行。
+重現腳本由父行程在 750 ms 後終止子行程。
+目前來源語法沒有 loop，compiler 也只產生向前跳躍。
+因此，這項風險現在主要出現在直接呼叫 run。</p>
+<p>瀏覽器在主執行緒同步執行 compile 與 run。
+增加 loop 前，建議讓 execute 接受 instruction budget。
+若需要使用者中止執行，再把工作移到 Worker。
+主執行緒上的 timeout 無法中斷同步 execute。</p>
+<p>目前還有可由 source 觸發的問題。
+20,000 層括號會讓 compile 拋出 RangeError。
+瀏覽器的 try 只涵蓋 run，無法顯示這個編譯例外。
+可加入巢狀深度上限，並讓 UI 包住整個編譯執行流程。</p>
+<p>依據：<a href="../../src/vm.js">VM loop，第 76 行</a>、<a href="../../src/parser.js">parser 遞迴，第 106 行</a>、<a href="../../web/app.js">UI 例外邊界，第 95 行</a>。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-G">
+<header class="am-panel-head"><span class="am-panel-id">G</span><h2>後續架構調整的順序</h2></header>
+<div class="am-panel-body"><div class="am-md"><div class="am-table-wrap"><table>
+<thead>
+<tr>
+<th>時機</th>
+<th>建議</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>現在</td>
+<td>修正 scope 預先宣告與 keywords 查找</td>
+<td>已影響現行語法的正確性</td>
+</tr>
+<tr>
+<td>現在</td>
+<td>補齊 bytecode 結構驗證</td>
+<td>run 是獨立的公開入口</td>
+</tr>
+<tr>
+<td>現在</td>
+<td>共用 opcode metadata</td>
+<td>指令寬度與 stack effect 目前散在實作中</td>
+</tr>
+<tr>
+<td>加入 loop 前</td>
+<td>定義 instruction budget 與中止方式</td>
+<td>execute 現在沒有執行上限</td>
+</tr>
+<tr>
+<td>加入 function 前</td>
+<td>定義 FunctionCode、Frame 與 capture</td>
+<td>單一 slots array 無法表達多次呼叫</td>
+</tr>
+<tr>
+<td>加入 debugger 前</td>
+<td>保留 bytecode offset 到 source span 的對應</td>
+<td>emitter 目前丟棄來源位置</td>
+</tr>
+</tbody></table></div>
+<p>共用 opcode metadata 可先包含 name、operand kind 與 stack effect。
+解碼器、verifier 與 disassembler 可使用同一份資料。
+指令的實際運算仍可保留在 VM switch。</p>
+<p>目前不需要先增加通用 IR 或 JIT。
+bound AST 已經把語意分析與指令生成分開。
+slot 不重用、constant 不去重也有明確的簡化價值。
+沒有量測結果前，我會保留這些取捨。</p>
+<p>這些是建議，尚未存在於目前實作。
+依據：<a href="../../src/bytecode.js">opcode 契約</a>、<a href="../../src/compiler.js">emitter 輸出，第 121 行</a>、<a href="../../src/vm.js">VM 狀態</a>。</p>
+</div></div>
+</section>
+<section class="am-panel" id="panel-H">
+<header class="am-panel-head"><span class="am-panel-id">H</span><h2>驗證與重現</h2></header>
+<div class="am-panel-body"><div class="am-md"><p>本次檢查使用 Node v24.21.0。
+既有 npm test 的 7 個測試檔案全部通過。
+npm run check 也通過。
+另外逐檔執行 node --check，18 個 JavaScript 檔案全部通過。</p>
+<p><a href="probe.mjs">重現腳本</a> 包含 9 項目前行為的斷言。
+其中一項確認完整 source-to-result 流程。
+其餘涵蓋上述缺口與驗證政策。
+這些斷言記錄現況，不能當作修正後的驗收條件。</p>
+<p>在 repo 根目錄執行：</p>
+</div>
+<pre class="am-code"><code data-lang="sh">node output/pstack-bytecode-review/probe.mjs</code></pre>
+<div class="am-md"><p><a href="observations.json">本次重現輸出</a> 保存每項觀察。
+修正時應將相應案例改成預期正確行為的 regression test。
+本次沒有修改既有 source、tests 或未提交的工作。</p>
+</div></div>
+</section>
+</div>
+</div>
+</main>
+<footer class="am-colophon">Generated by Answer me with HTML 0.2.2 · 2026-10-16 19:24</footer>
+<textarea id="am-source" hidden readonly aria-hidden="true">---
+template: doc
+theme: blueprint
+title: JumpJet bytecode engine 架構檢查
+subtitle: 保留現有分層，先修正名稱綁定與 VM 輸入契約
+date: 2026-10-16
+scope: 目前工作目錄，包含未提交的 analyzer 與控制流實作
+---
+
+## A 架構方向可以保留
+
+這是修正前的歷史報告。
+後續修正與照片請讀 [修正證據](../pstack-bytecode-fixes/report.html)。
+重現腳本改為使用保存的修正前 source 快照。
+
+JumpJet 已有完整的 source-to-bytecode-to-result 流程。
+analyzer 分離名稱語意，compiler 負責指令生成。
+這個邊界適合目前的 number、boolean 與 if 語言切片。
+
+目前最值得處理的是正確性與執行邊界。
+我建議先修正 scope 綁定、關鍵字查找與 bytecode 驗證。
+新增函式之前，再定義 call frame 與變數生命週期。
+
+本次檢查採用 pstack 的 how、unslop 與驗證原則。
+只新增報告與重現腳本，沒有修改 engine。
+
+## B 真正的入口與模組責任
+
+```flow LR
+source -&gt; lexer: tokens 與 span
+lexer -&gt; parser: syntax AST
+parser -&gt; analyzer: 名稱與 scope
+analyzer -&gt; compiler: bound AST 與 slot
+compiler -&gt; VM: bytecode program
+VM -&gt; result: number 或 boolean
+```
+
+瀏覽器的 compileAndRun 呼叫公開的 compile，再呼叫 run。
+compile 依序執行各 phase，遇到 diagnostics 就返回。
+run 直接委派 execute。
+
+| 模組 | 擁有的責任 | 對後續階段的承諾 |
+|---|---|---|
+| lexer | 字元、關鍵字、最長運算子辨識 | tokens 附來源範圍 |
+| parser | precedence、associativity、statement 結構 | syntax AST 保留名稱 |
+| analyzer | scope、const、初始化檢查、slot 分配 | bound AST 的識別字已換成 slot |
+| compiler | 指令選擇、stack 配平、jump 回填 | 產生可供 VM 執行的 program |
+| VM | program 邊界檢查與指令執行 | 對合法程式返回值 |
+
+這些依賴沒有形成循環。
+compiler 不重做名稱查找，VM 也不依賴 AST 或 DOM。
+這是目前設計最值得保留的部分。
+
+依據：[公開入口](../../src/index.js)、[瀏覽器入口，第 95 行](../../web/app.js)、[analyzer](../../src/analyzer.js)、[compiler](../../src/compiler.js)。
+
+## C Bytecode 與執行狀態
+
+program 有 version、constants、code 與 slotCount。
+code 是平坦的 JavaScript number array，沒有二進位編碼。
+共有 21 個 opcode，使用零個或一個 operand。
+jump target 是 code array 的絕對 index。
+
+每次 execute 都建立自己的 operand stack、slots 與 initializedSlots。
+instructionPointer 指向下一個待讀位置。
+各次執行沒有共用 VM 可變狀態。
+
+例如，賦值先產生值，再 Duplicate，最後 StoreSlot。
+StoreSlot 取走副本，原值保留作為賦值運算結果。
+一般 expression statement 用 Pop 丟棄結果。
+最後一個頂層 expression statement 用 Return 返回結果。
+
+analyzer 為每個宣告分配唯一 slot，離開 block 不回收。
+目前沒有函式呼叫、call frame、closure 或物件 heap。
+數值運算直接使用宿主 JavaScript 的運算子。
+目前也尚未 self-host。
+
+依據：[opcode 定義](../../src/bytecode.js)、[指令生成，第 69 行](../../src/compiler.js)、[執行狀態，第 30 行](../../src/vm.js)、[現行規格](../../docs/specs/0003-control-flow-and-semantic-analysis.md)。
+
+## D 語意層有兩個可重現問題
+
+### 優先修正：內層宣告前的引用會綁到外層
+
+```js
+let value = 1;
+{
+	value = 2;
+	let value = 3;
+}
+value;
+```
+
+JumpJet 成功編譯並返回 2。
+同一段程式在 Node 會因 TDZ 拋出 ReferenceError。
+analyzer 在走到宣告時才加入 binding。
+因此，前面的賦值會解析成外層 slot。
+
+最小修正是進入 scope 時先收集該 scope 的直接宣告。
+所有 binding 起初都標成未初始化。
+接著依序分析 statement，並更新初始化狀態。
+這項責任應留在 analyzer。
+
+現行規格明文描述 initializer 自我引用的 TDZ。
+上述案例揭露的是與 JavaScript block scope 的語意落差。
+規格也需要補上整個 block 的宣告可見範圍。
+
+依據：[resolve，第 37 行](../../src/analyzer.js)、[宣告建立，第 129 行](../../src/analyzer.js)、[block traversal，第 169 行](../../src/analyzer.js)。
+
+### 接著修正：關鍵字表讀到 Object prototype
+
+`let constructor = 1; constructor;` 會編譯失敗。
+`toString` 作為變數名稱也會失敗。
+keywords 是一般 object，查找會讀到繼承的屬性。
+Object.freeze 不會移除 prototype。
+
+改用 Map，或用 Object.hasOwn 限制查找自己的 key。
+這是 lexer 的責任，parser 不需要繞過錯誤 token。
+
+依據：[keywords 定義，第 53 行](../../src/lexer.js)、[查表，第 148 行](../../src/lexer.js)。
+
+## E VM 邊界驗證仍不完整
+
+### Jump target 只檢查範圍
+
+下面的 program 返回 42。
+線性解碼的指令起點是 0、2、4、6。
+target 5 指向 Constant 的 operand，VM 卻把它當作 Return。
+
+```js
+{
+	version: 1,
+	constants: Array(9).fill(42),
+	code: [0, 0, 20, 5, 0, 8, 8],
+	slotCount: 0
+}
+```
+
+目前 compiler 產生的 jump 不會觸發這個案例。
+缺口在公開 run 接受任意 program 的邊界。
+最小修正是先解碼指令，再檢查 target 是否為指令起點。
+code.length 作為 target 的既有政策可另行保留。
+
+### 稀疏 constants 會讓 undefined 進入 VM
+
+constants 為 new Array(1) 時，forEach 會跳過空洞。
+Constant 0 因此取得 undefined，Return 也直接返回 undefined。
+這違反目前 number 或 boolean 的值域契約。
+
+改用逐 index 驗證，拒絕空洞或不合法的常數。
+另外，Return 後方的未知 opcode 目前不會被檢查。
+若承諾驗證整個 program，解碼階段就需要檢查不可達指令。
+若只承諾檢查執行路徑，文件應明確說明。
+
+依據：[constants 驗證，第 17 行](../../src/vm.js)、[jump 檢查，第 68 行](../../src/vm.js)、[Constant，第 86 行](../../src/vm.js)。
+
+## F 執行控制需要明確的邊界
+
+手寫 bytecode 的 Jump 0 會持續執行。
+重現腳本由父行程在 750 ms 後終止子行程。
+目前來源語法沒有 loop，compiler 也只產生向前跳躍。
+因此，這項風險現在主要出現在直接呼叫 run。
+
+瀏覽器在主執行緒同步執行 compile 與 run。
+增加 loop 前，建議讓 execute 接受 instruction budget。
+若需要使用者中止執行，再把工作移到 Worker。
+主執行緒上的 timeout 無法中斷同步 execute。
+
+目前還有可由 source 觸發的問題。
+20,000 層括號會讓 compile 拋出 RangeError。
+瀏覽器的 try 只涵蓋 run，無法顯示這個編譯例外。
+可加入巢狀深度上限，並讓 UI 包住整個編譯執行流程。
+
+依據：[VM loop，第 76 行](../../src/vm.js)、[parser 遞迴，第 106 行](../../src/parser.js)、[UI 例外邊界，第 95 行](../../web/app.js)。
+
+## G 後續架構調整的順序
+
+| 時機 | 建議 | 原因 |
+|---|---|---|
+| 現在 | 修正 scope 預先宣告與 keywords 查找 | 已影響現行語法的正確性 |
+| 現在 | 補齊 bytecode 結構驗證 | run 是獨立的公開入口 |
+| 現在 | 共用 opcode metadata | 指令寬度與 stack effect 目前散在實作中 |
+| 加入 loop 前 | 定義 instruction budget 與中止方式 | execute 現在沒有執行上限 |
+| 加入 function 前 | 定義 FunctionCode、Frame 與 capture | 單一 slots array 無法表達多次呼叫 |
+| 加入 debugger 前 | 保留 bytecode offset 到 source span 的對應 | emitter 目前丟棄來源位置 |
+
+共用 opcode metadata 可先包含 name、operand kind 與 stack effect。
+解碼器、verifier 與 disassembler 可使用同一份資料。
+指令的實際運算仍可保留在 VM switch。
+
+目前不需要先增加通用 IR 或 JIT。
+bound AST 已經把語意分析與指令生成分開。
+slot 不重用、constant 不去重也有明確的簡化價值。
+沒有量測結果前，我會保留這些取捨。
+
+這些是建議，尚未存在於目前實作。
+依據：[opcode 契約](../../src/bytecode.js)、[emitter 輸出，第 121 行](../../src/compiler.js)、[VM 狀態](../../src/vm.js)。
+
+## H 驗證與重現
+
+本次檢查使用 Node v24.21.0。
+既有 npm test 的 7 個測試檔案全部通過。
+npm run check 也通過。
+另外逐檔執行 node --check，18 個 JavaScript 檔案全部通過。
+
+[重現腳本](probe.mjs) 包含 9 項目前行為的斷言。
+其中一項確認完整 source-to-result 流程。
+其餘涵蓋上述缺口與驗證政策。
+這些斷言記錄現況，不能當作修正後的驗收條件。
+
+在 repo 根目錄執行：
+
+```sh
+node output/pstack-bytecode-review/probe.mjs
+```
+
+[本次重現輸出](observations.json) 保存每項觀察。
+修正時應將相應案例改成預期正確行為的 regression test。
+本次沒有修改既有 source、tests 或未提交的工作。
+</textarea>
+<script>
+(() => {
+  const root = document.documentElement;
+  const cycle = (list, cur) => list[(list.indexOf(cur) + 1) % list.length];
+  const label = (btn, value) => {
+    const map = JSON.parse(btn.dataset.labels || '{}');
+    btn.textContent = map[value] || value;
+  };
+  const bind = (name, attr, values) => {
+    const btn = document.querySelector(`[data-am="${name}"]`);
+    if (!btn) return;
+    label(btn, root.getAttribute(attr));
+    btn.addEventListener('click', () => {
+      const next = cycle(values, root.getAttribute(attr));
+      root.setAttribute(attr, next);
+      label(btn, next);
+    });
+  };
+  bind('theme', 'data-theme', ['blueprint', 'shadcn']);
+  bind('mode', 'data-mode', ['auto', 'light', 'dark']);
+
+  const copyBtn = document.querySelector('[data-am="copy"]');
+  copyBtn?.addEventListener('click', async () => {
+    const text = document.getElementById('am-source').value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.append(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    const original = copyBtn.textContent;
+    copyBtn.textContent = copyBtn.dataset.done;
+    setTimeout(() => { copyBtn.textContent = original; }, 1400);
+  });
+})();
+</script>
+</body>
+</html>

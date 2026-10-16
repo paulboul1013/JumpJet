@@ -1,0 +1,567 @@
+✖ reports TDZ for read before a later top-level declaration (12.0665ms)
+✖ reports TDZ for read before an inner declaration (1.3403ms)
+✖ reports TDZ for write before an inner declaration (0.6271ms)
+✔ reports TDZ for write in an inner binding's initializer (0.6821ms)
+✖ reports TDZ for write before a later top-level declaration (0.8195ms)
+✔ preserves initialized shadowing and writes to the nearest declared binding (142.371701ms)
+✖ tokenizes prototype name constructor as an identifier (12.8037ms)
+✖ compiles and executes a binding named constructor (1.1603ms)
+✖ tokenizes prototype name toString as an identifier (1.0837ms)
+✖ compiles and executes a binding named toString (0.5891ms)
+✖ tokenizes prototype name __proto__ as an identifier (0.6697ms)
+✖ compiles and executes a binding named __proto__ (0.4815ms)
+✖ rejects a jump into an operand even if its value is a valid opcode (1.112ms)
+✖ rejects an untaken conditional jump into an operand (0.7523ms)
+✔ executes a forward jump to a valid instruction boundary (0.5905ms)
+✔ allows an untaken conditional jump to code.length (0.5101ms)
+✔ reports missing Return when a jump to code.length is taken (0.8827ms)
+✖ rejects a sparse constant pool instead of returning undefined (0.7432ms)
+✖ rejects a constant inherited from the array's prototype (0.9753ms)
+✖ rejects an unknown opcode after an unreachable Return (0.6416ms)
+✖ rejects an unreachable Constant with a missing operand (0.5375ms)
+✖ rejects an unreachable StoreSlot with a missing operand (0.2217ms)
+✖ rejects an unreachable LoadSlot with a missing operand (0.1435ms)
+✖ rejects an unreachable Jump with a missing operand (0.175ms)
+✖ rejects an unreachable JumpIfFalse with a missing operand (0.1965ms)
+✖ execute stops a backward jump at its instruction budget (2010.33161ms)
+✖ run stops a backward jump at its instruction budget (2008.215609ms)
+✔ executes ordinary arithmetic under an instruction budget (0.5625ms)
+✖ reports parser diagnostics for excessive source depth without throwing (43.014501ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 6
+ℹ fail 23
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5037.239524
+
+✖ failing tests:
+
+test at tests/engine-boundaries.test.js:21:5
+✖ reports TDZ for read before a later top-level declaration (12.0665ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + "Unknown identifier 'value'."
+  - "Cannot access 'value' before initialization."
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:26:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "Unknown identifier 'value'.",
+    expected: "Cannot access 'value' before initialization.",
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:21:5
+✖ reports TDZ for read before an inner declaration (1.3403ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  true !== false
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:24:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:21:5
+✖ reports TDZ for write before an inner declaration (0.6271ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  true !== false
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:24:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:21:5
+✖ reports TDZ for write before a later top-level declaration (0.8195ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + "Unknown identifier 'value'."
+  - "Cannot access 'value' before initialization."
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:26:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "Unknown identifier 'value'.",
+    expected: "Cannot access 'value' before initialization.",
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:38:5
+✖ tokenizes prototype name constructor as an identifier (12.8037ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + [Function: Object]
+  - 'Identifier'
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:42:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    expected: 'Identifier',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:45:5
+✖ compiles and executes a binding named constructor (1.1603ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:48:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:38:5
+✖ tokenizes prototype name toString as an identifier (1.0837ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + [Function: toString]
+  - 'Identifier'
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:42:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    expected: 'Identifier',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:45:5
+✖ compiles and executes a binding named toString (0.5891ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:48:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:38:5
+✖ tokenizes prototype name __proto__ as an identifier (0.6697ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + [Object: null prototype] {}
+  - 'Identifier'
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:42:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: {},
+    expected: 'Identifier',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:45:5
+✖ compiles and executes a binding named __proto__ (0.4815ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:48:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:53:1
+✖ rejects a jump into an operand even if its value is a valid opcode (1.112ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:59:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /instruction boundary/i,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:62:1
+✖ rejects an untaken conditional jump into an operand (0.7523ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:68:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /instruction boundary/i,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:93:1
+✖ rejects a sparse constant pool instead of returning undefined (0.7432ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:94:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /constant 0/i,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:100:1
+✖ rejects a constant inherited from the array's prototype (0.9753ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:106:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /constant 0/i,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:112:1
+✖ rejects an unknown opcode after an unreachable Return (0.6416ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:113:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Unknown opcode 999/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:120:5
+✖ rejects an unreachable Constant with a missing operand (0.5375ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:121:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Missing operand for Constant/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:120:5
+✖ rejects an unreachable StoreSlot with a missing operand (0.2217ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:121:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Missing operand for StoreSlot/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:120:5
+✖ rejects an unreachable LoadSlot with a missing operand (0.1435ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:121:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Missing operand for LoadSlot/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:120:5
+✖ rejects an unreachable Jump with a missing operand (0.175ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:121:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Missing operand for Jump/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:120:5
+✖ rejects an unreachable JumpIfFalse with a missing operand (0.1965ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:121:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Missing operand for JumpIfFalse/,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:129:5
+✖ execute stops a backward jump at its instruction budget (2010.33161ms)
+  AssertionError [ERR_ASSERTION]: Child must terminate under its budget: spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node ETIMEDOUT
+  + actual - expected
+
+  + Error: spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node ETIMEDOUT
+  +     at Object.spawnSync (node:internal/child_process:1160:20)
+  +     at spawnSync (node:child_process:928:24)
+  +     at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:140:23)
+  +     at Test.runInAsyncScope (node:async_hooks:227:14)
+  +     at Test.run (node:internal/test_runner/test:1402:25)
+  +     at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+  +     at Test.postRun (node:internal/test_runner/test:1542:19)
+  +     at Test.run (node:internal/test_runner/test:1467:12)
+  +     at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+  +   code: 'ETIMEDOUT',
+  +   errno: -110,
+  +   path: '/opt/nodejs/node-v24.21.0-linux-x64/bin/node',
+  +   spawnargs: [
+  +     '--input-type=module',
+  +     '-e',
+  +     '\n' +
+  +       '            import assert from "node:assert/strict";\n' +
+  +       '            import { execute } from "file:///home/paulboul/JumpJet/src/vm.js";\n' +
+  +       '            assert.throws(\n' +
+  +       '                () => execute({version: 1, constants: [], code: [20, 0], slotCount: 0}, {maxInstructions: 20}),\n' +
+  +       '                error => error instanceof RangeError && /Instruction budget/.test(error.message),\n' +
+  +       '            );\n' +
+  +       '            console.log("instruction budget enforced");\n' +
+  +       '        '
+  +   ],
+  +   syscall: 'spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node'
+  + }
+  - undefined
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:145:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node ETIMEDOUT
+        at Object.spawnSync (node:internal/child_process:1160:20)
+        at spawnSync (node:child_process:928:24)
+        at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:140:23)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:129:5
+✖ run stops a backward jump at its instruction budget (2008.215609ms)
+  AssertionError [ERR_ASSERTION]: Child must terminate under its budget: spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node ETIMEDOUT
+  + actual - expected
+
+  + Error: spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node ETIMEDOUT
+  +     at Object.spawnSync (node:internal/child_process:1160:20)
+  +     at spawnSync (node:child_process:928:24)
+  +     at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:140:23)
+  +     at Test.runInAsyncScope (node:async_hooks:227:14)
+  +     at Test.run (node:internal/test_runner/test:1402:25)
+  +     at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+  +     at Test.postRun (node:internal/test_runner/test:1542:19)
+  +     at Test.run (node:internal/test_runner/test:1467:12)
+  +     at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+  +   code: 'ETIMEDOUT',
+  +   errno: -110,
+  +   path: '/opt/nodejs/node-v24.21.0-linux-x64/bin/node',
+  +   spawnargs: [
+  +     '--input-type=module',
+  +     '-e',
+  +     '\n' +
+  +       '            import assert from "node:assert/strict";\n' +
+  +       '            import { run } from "file:///home/paulboul/JumpJet/src/index.js";\n' +
+  +       '            assert.throws(\n' +
+  +       '                () => run({version: 1, constants: [], code: [20, 0], slotCount: 0}, {maxInstructions: 20}),\n' +
+  +       '                error => error instanceof RangeError && /Instruction budget/.test(error.message),\n' +
+  +       '            );\n' +
+  +       '            console.log("instruction budget enforced");\n' +
+  +       '        '
+  +   ],
+  +   syscall: 'spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node'
+  + }
+  - undefined
+
+      at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:145:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: spawnSync /opt/nodejs/node-v24.21.0-linux-x64/bin/node ETIMEDOUT
+        at Object.spawnSync (node:internal/child_process:1160:20)
+        at spawnSync (node:child_process:928:24)
+        at TestContext.<anonymous> (file:///home/paulboul/JumpJet/tests/engine-boundaries.test.js:140:23)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+        at Test.postRun (node:internal/test_runner/test:1542:19)
+        at Test.run (node:internal/test_runner/test:1467:12)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/engine-boundaries.test.js:158:1
+✖ reports parser diagnostics for excessive source depth without throwing (43.014501ms)
+  RangeError: Maximum call stack size exceeded
+      at parseAdditive (file:///home/paulboul/JumpJet/src/parser.js:171:27)
+      at parseBinary (file:///home/paulboul/JumpJet/src/parser.js:143:26)
+      at parseComparison (file:///home/paulboul/JumpJet/src/parser.js:176:16)
+      at parseBinary (file:///home/paulboul/JumpJet/src/parser.js:143:26)
+      at parseEquality (file:///home/paulboul/JumpJet/src/parser.js:180:16)
+      at parseAssignment (file:///home/paulboul/JumpJet/src/parser.js:184:24)
+      at parseExpression (file:///home/paulboul/JumpJet/src/parser.js:207:16)
+      at parsePrimary (file:///home/paulboul/JumpJet/src/parser.js:108:32)
+      at parseUnary (file:///home/paulboul/JumpJet/src/parser.js:125:20)
+      at parseBinary (file:///home/paulboul/JumpJet/src/parser.js:143:26)

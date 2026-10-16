@@ -1,0 +1,28 @@
+{
+  "testSummary": [
+    "ℹ tests 94",
+    "ℹ pass 94",
+    "ℹ fail 0",
+    "ℹ cancelled 0",
+    "ℹ skipped 0"
+  ],
+  "syntaxFiles": 20,
+  "arithmeticDemo": "Source: let answer = 1 + 2 * 3; answer;\nBytecode: {\n  version: 1,\n  constants: [ 1, 2, 3 ],\n  code: [\n    0, 0, 0, 1, 0, 2,\n    3, 1, 5, 0, 6, 0,\n    8\n  ],\n  slotCount: 1\n}\nResult: 7",
+  "controlFlowDemo": "Source: let score = 3;\nif (score < 5) {\n    score = -score + 10;\n} else {\n    score = 0;\n}\nscore === 7;\nBytecode: {\n  version: 1,\n  constants: [ 3, 5, 10, 0, 7 ],\n  code: [\n     0,  0, 5,  0,  6, 0,  0,  1, 14,\n    19, 23, 6,  0,  9, 0,  2,  1, 18,\n     5,  0, 7, 20, 29, 0,  3, 18,  5,\n     0,  7, 6,  0,  0, 4, 12,  8\n  ],\n  slotCount: 1\n}\nResult: true",
+  "independentReview": {
+    "node": "v24.21.0",
+    "generation": "Deterministic; no RNG. Depth 0..199 across four shapes; k=(i*17+j*13)%7 for 500 differential cases with ten statements each.",
+    "nesting": {
+      "total": 800,
+      "accepted": 385,
+      "rejectedWithParserDiagnostic": 415
+    },
+    "differential": {
+      "total": 500,
+      "distinctPrograms": 7,
+      "nativeEngine": "node:vm"
+    },
+    "totalChecks": 1300,
+    "result": "All assertions passed"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "phase": "before",
+  "modulePath": "/output/pstack-bytecode-fixes/before/src/index.js",
+  "passed": 1,
+  "total": 9,
+  "observations": [
+    {
+      "name": "01 · Block scope / TDZ",
+      "input": "let value = 1;\n{ value = 2; let value = 3; }\nvalue;",
+      "actual": "value: 2",
+      "expected": "analyzer TDZ diagnostic",
+      "pass": false
+    },
+    {
+      "name": "02 · constructor 識別字",
+      "input": "let constructor = 1;\nconstructor;",
+      "actual": "[parser] Expected an identifier after 'let'.",
+      "expected": "value: 1",
+      "pass": false
+    },
+    {
+      "name": "03 · toString 識別字",
+      "input": "let toString = 1;\ntoString;",
+      "actual": "[parser] Expected an identifier after 'let'.",
+      "expected": "value: 1",
+      "pass": false
+    },
+    {
+      "name": "04 · Jump 進入 operand",
+      "input": "code: [0,0,20,5,0,8,8]\nconstants: Array(9).fill(42)",
+      "actual": "value: 42",
+      "expected": "RangeError: target 5 is not an instruction boundary",
+      "pass": false
+    },
+    {
+      "name": "05 · 稀疏 constant pool",
+      "input": "code: [0,0,8]\nconstants: new Array(1)",
+      "actual": "value: undefined",
+      "expected": "TypeError: constant 0 is invalid",
+      "pass": false
+    },
+    {
+      "name": "06 · 不可達未知 opcode",
+      "input": "code: [0,0,8,999]\nconstants: [42]",
+      "actual": "value: 42",
+      "expected": "RangeError: Unknown opcode 999.",
+      "pass": false
+    },
+    {
+      "name": "07 · 過深來源程式",
+      "input": "'('.repeat(20000) + '1'\n+ ')'.repeat(20000) + ';'",
+      "actual": "RangeError: Maximum call stack size exceeded",
+      "expected": "parser depth diagnostic",
+      "pass": false
+    },
+    {
+      "name": "08 · 指令預算 / Jump 0",
+      "input": "code: [20,0]\nrun(program, {maxInstructions:20})",
+      "actual": "Timed out: 2 秒後仍未返回，測試器終止 Worker",
+      "expected": "RangeError: Instruction budget 20 exhausted.",
+      "pass": false
+    },
+    {
+      "name": "09 · 原有控制流正常",
+      "input": "let score = 3;\nif (score < 5) { score = -score + 10; }\nscore === 7;",
+      "actual": "value: true",
+      "expected": "value: true",
+      "pass": true
+    }
+  ]
+}

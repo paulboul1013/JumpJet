@@ -1,0 +1,12 @@
+{
+  "deepSource": {
+    "result": "編譯失敗",
+    "diagnostic": "[parser] Source nesting exceeds limit 128.\n位置 129–130"
+  },
+  "recoveryResult": "42",
+  "simulatedCompilerException": {
+    "diagnostic": "[compiler] UI boundary probe",
+    "bytecode": "未產生 bytecode。"
+  },
+  "uncaughtPageErrors": []
+}

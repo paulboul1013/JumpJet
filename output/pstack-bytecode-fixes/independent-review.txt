@@ -1,0 +1,16 @@
+{
+  "node": "v24.21.0",
+  "generation": "Deterministic; no RNG. Depth 0..199 across four shapes; k=(i*17+j*13)%7 for 500 differential cases with ten statements each.",
+  "nesting": {
+    "total": 800,
+    "accepted": 385,
+    "rejectedWithParserDiagnostic": 415
+  },
+  "differential": {
+    "total": 500,
+    "distinctPrograms": 7,
+    "nativeEngine": "node:vm"
+  },
+  "totalChecks": 1300,
+  "result": "All assertions passed"
+}

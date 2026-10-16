@@ -1,0 +1,71 @@
+{
+  "phase": "after",
+  "modulePath": "/src/index.js",
+  "passed": 9,
+  "total": 9,
+  "observations": [
+    {
+      "name": "01 · Block scope / TDZ",
+      "input": "let value = 1;\n{ value = 2; let value = 3; }\nvalue;",
+      "actual": "[analyzer] Cannot access 'value' before initialization.",
+      "expected": "analyzer TDZ diagnostic",
+      "pass": true
+    },
+    {
+      "name": "02 · constructor 識別字",
+      "input": "let constructor = 1;\nconstructor;",
+      "actual": "value: 1",
+      "expected": "value: 1",
+      "pass": true
+    },
+    {
+      "name": "03 · toString 識別字",
+      "input": "let toString = 1;\ntoString;",
+      "actual": "value: 1",
+      "expected": "value: 1",
+      "pass": true
+    },
+    {
+      "name": "04 · Jump 進入 operand",
+      "input": "code: [0,0,20,5,0,8,8]\nconstants: Array(9).fill(42)",
+      "actual": "RangeError: Jump target 5 is not an instruction boundary.",
+      "expected": "RangeError: target 5 is not an instruction boundary",
+      "pass": true
+    },
+    {
+      "name": "05 · 稀疏 constant pool",
+      "input": "code: [0,0,8]\nconstants: new Array(1)",
+      "actual": "TypeError: Bytecode constant 0 must be a number or boolean.",
+      "expected": "TypeError: constant 0 is invalid",
+      "pass": true
+    },
+    {
+      "name": "06 · 不可達未知 opcode",
+      "input": "code: [0,0,8,999]\nconstants: [42]",
+      "actual": "RangeError: Unknown opcode 999.",
+      "expected": "RangeError: Unknown opcode 999.",
+      "pass": true
+    },
+    {
+      "name": "07 · 過深來源程式",
+      "input": "'('.repeat(20000) + '1'\n+ ')'.repeat(20000) + ';'",
+      "actual": "[parser] Source nesting exceeds limit 128.",
+      "expected": "parser depth diagnostic",
+      "pass": true
+    },
+    {
+      "name": "08 · 指令預算 / Jump 0",
+      "input": "code: [20,0]\nrun(program, {maxInstructions:20})",
+      "actual": "RangeError: Instruction budget 20 exhausted.",
+      "expected": "RangeError: Instruction budget 20 exhausted.",
+      "pass": true
+    },
+    {
+      "name": "09 · 原有控制流正常",
+      "input": "let score = 3;\nif (score < 5) { score = -score + 10; }\nscore === 7;",
+      "actual": "value: true",
+      "expected": "value: true",
+      "pass": true
+    }
+  ]
+}

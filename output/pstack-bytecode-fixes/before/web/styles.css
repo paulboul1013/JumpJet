@@ -1,0 +1,452 @@
+:root {
+    color-scheme: dark;
+    --background: #0a0d12;
+    --panel: #11161e;
+    --panel-raised: #171d27;
+    --line: #293140;
+    --line-strong: #3a4659;
+    --text: #edf1f7;
+    --muted: #8d99aa;
+    --accent: #ff6b35;
+    --accent-strong: #ff8459;
+    --success: #56d6a0;
+    --error: #ff6b7a;
+    --warning: #f4c95d;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(circle at 20% -10%, rgb(255 107 53 / 12%), transparent 30rem),
+        var(--background);
+    color: var(--text);
+    font-family: var(--sans);
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button,
+.file-button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -4rem;
+    z-index: 10;
+    padding: 0.7rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--accent);
+    color: #140802;
+    font-weight: 700;
+}
+
+.skip-link:focus {
+    top: 1rem;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 5rem;
+    padding: 1rem clamp(1rem, 3vw, 2.5rem);
+    border-bottom: 1px solid var(--line);
+    background: rgb(10 13 18 / 82%);
+    backdrop-filter: blur(18px);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.brand-mark {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 1px solid rgb(255 107 53 / 55%);
+    border-radius: 0.7rem;
+    background: rgb(255 107 53 / 10%);
+    color: var(--accent-strong);
+    font: 700 0.92rem var(--mono);
+    letter-spacing: -0.08em;
+}
+
+.brand h1,
+.brand p,
+.output-heading h2 {
+    margin: 0;
+}
+
+.brand h1 {
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+}
+
+.brand p {
+    margin-top: 0.2rem;
+    color: var(--muted);
+    font: 0.72rem var(--mono);
+}
+
+.save-status {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.76rem;
+}
+
+.save-status[data-state="saved"] {
+    border-color: rgb(86 214 160 / 35%);
+    color: var(--success);
+}
+
+.save-status[data-state="pending"] {
+    color: var(--warning);
+}
+
+.save-status[data-state="error"] {
+    border-color: rgb(255 107 122 / 35%);
+    color: var(--error);
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(20rem, 0.75fr);
+    gap: 1rem;
+    min-height: calc(100vh - 8.2rem);
+    padding: 1rem clamp(1rem, 3vw, 2.5rem);
+}
+
+.editor-panel,
+.output-card {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 0.85rem;
+    background: rgb(17 22 30 / 92%);
+    box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 18%);
+}
+
+.editor-panel {
+    display: grid;
+    grid-template-rows: auto minmax(28rem, 1fr) auto;
+    min-width: 0;
+}
+
+.panel-header {
+    min-height: 3.6rem;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-raised);
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.document-name {
+    display: flex;
+    min-width: 8rem;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.file-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 1rem rgb(255 107 53 / 55%);
+}
+
+#file-name {
+    width: min(14rem, 100%);
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text);
+    font: 0.86rem var(--mono);
+}
+
+#file-name:focus {
+    box-shadow: 0 1px var(--accent);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+}
+
+.button {
+    display: inline-flex;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.5rem;
+    background: #1b222d;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 650;
+    transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.button:hover {
+    border-color: #637087;
+    background: #242d3a;
+}
+
+.button:active {
+    transform: translateY(1px);
+}
+
+.button:focus-visible,
+#source-editor:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.button-primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #1d0b04;
+}
+
+.button-primary:hover {
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+}
+
+.editor-shell {
+    display: grid;
+    min-height: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+    background: #0d1118;
+}
+
+.line-numbers,
+#source-editor {
+    margin: 0;
+    border: 0;
+    font: 0.9rem/1.72 var(--mono);
+    tab-size: 4;
+}
+
+.line-numbers {
+    overflow: hidden;
+    min-width: 3.4rem;
+    padding: 1.1rem 0.8rem;
+    border-right: 1px solid var(--line);
+    color: #4f5a6b;
+    text-align: right;
+    user-select: none;
+}
+
+#source-editor {
+    width: 100%;
+    min-height: 100%;
+    resize: none;
+    padding: 1.1rem 1.25rem;
+    outline: 0;
+    background: transparent;
+    color: #dfe6ef;
+    caret-color: var(--accent);
+    white-space: pre;
+}
+
+#source-editor::selection {
+    background: rgb(255 107 53 / 28%);
+}
+
+.editor-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.52rem 0.8rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font: 0.7rem var(--mono);
+}
+
+#editor-help {
+    margin-left: auto;
+}
+
+.output-panel {
+    display: grid;
+    min-width: 0;
+    align-content: start;
+    gap: 1rem;
+}
+
+.output-card {
+    min-height: 9rem;
+}
+
+.output-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-raised);
+}
+
+.output-heading h2 {
+    margin-top: 0.15rem;
+    font-size: 0.92rem;
+}
+
+.eyebrow {
+    color: var(--accent-strong);
+    font: 0.62rem var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.run-state {
+    padding: 0.3rem 0.55rem;
+    border-radius: 999px;
+    background: #232b37;
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
+.run-state[data-state="success"] {
+    background: rgb(86 214 160 / 12%);
+    color: var(--success);
+}
+
+.run-state[data-state="error"] {
+    background: rgb(255 107 122 / 12%);
+    color: var(--error);
+}
+
+.result-output,
+.diagnostics-output,
+.bytecode-output {
+    overflow: auto;
+    max-height: 17rem;
+    margin: 0;
+    padding: 1rem;
+    color: #cbd5e1;
+    font: 0.78rem/1.55 var(--mono);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.result-output {
+    min-height: 5rem;
+    color: var(--success);
+    font-size: clamp(1.4rem, 4vw, 2.3rem);
+    font-weight: 750;
+}
+
+.bytecode-card {
+    min-height: 14rem;
+}
+
+.bytecode-output {
+    max-height: 24rem;
+}
+
+.app-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.55rem clamp(1rem, 3vw, 2.5rem) 0.85rem;
+    color: #667287;
+    font: 0.68rem var(--mono);
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    clip-path: inset(50%) !important;
+}
+
+@media (max-width: 980px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .editor-panel {
+        min-height: 70vh;
+    }
+}
+
+@media (max-width: 700px) {
+    .app-header,
+    .editor-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .save-status {
+        align-self: stretch;
+        text-align: center;
+    }
+
+    .toolbar {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .button,
+    .file-button {
+        flex: 1 1 calc(50% - 0.5rem);
+    }
+
+    #editor-help {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .app-footer {
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
