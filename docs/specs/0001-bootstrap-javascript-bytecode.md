@@ -2,6 +2,8 @@
 status: implemented
 ---
 
+> 本文件記錄最初的 arithmetic slice。後續的 semantic analysis 與 control flow 架構定義在 [0003-control-flow-and-semantic-analysis.md](0003-control-flow-and-semantic-analysis.md)。
+
 # Spec: bootstrap JavaScript-to-bytecode compiler
 
 ## Objective

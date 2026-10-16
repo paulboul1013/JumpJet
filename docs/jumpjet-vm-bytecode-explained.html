@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="blueprint" data-mode="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="Answer me with HTML 0.2.2">
+<title>JumpJet VM 如何執行 bytecode</title>
+<style>
+html[data-theme="blueprint"], html[data-theme="blueprint"][data-mode="light"] {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --radius: 0px;
+  --shadow: none;
+  --bw: 1.5px;
+  --head-font: var(--font-sans);
+  --bg: #f6f6f3;
+  --paper: #ffffff;
+  --ink: #16181d;
+  --ink-2: #4b5260;
+  --ink-3: #8b929e;
+  --line: #1d2026;
+  --line-2: #d6dae1;
+  --fill: #f3f5f8;
+  --accent: #1d5fbf;
+  --accent-bg: #e4ecf8;
+  --ok: #1d5fbf;
+  --ok-bg: #e4ecf8;
+  --err: #c62828;
+  --err-bg: #fbeaea;
+  --warn: #a8620a;
+  --warn-bg: #fdf3e2;
+  --head-bg: #16181d;
+  --head-fg: #ffffff;
+}
+html[data-theme="blueprint"][data-mode="dark"] {
+  --bg: #081322;
+  --paper: #0d1c31;
+  --ink: #e6edf7;
+  --ink-2: #a9b8cc;
+  --ink-3: #6b7f99;
+  --line: #c9d6e8;
+  --line-2: #23385a;
+  --fill: #12253f;
+  --accent: #6ea8ff;
+  --accent-bg: #16305a;
+  --ok: #6ea8ff;
+  --ok-bg: #16305a;
+  --err: #ff7070;
+  --err-bg: #3b1620;
+  --warn: #f0b14a;
+  --warn-bg: #3a2a10;
+  --head-bg: #e6edf7;
+  --head-fg: #081322;
+}
+@media (prefers-color-scheme: dark) {
+html[data-theme="blueprint"][data-mode="auto"] {
+  --bg: #081322;
+  --paper: #0d1c31;
+  --ink: #e6edf7;
+  --ink-2: #a9b8cc;
+  --ink-3: #6b7f99;
+  --line: #c9d6e8;
+  --line-2: #23385a;
+  --fill: #12253f;
+  --accent: #6ea8ff;
+  --accent-bg: #16305a;
+  --ok: #6ea8ff;
+  --ok-bg: #16305a;
+  --err: #ff7070;
+  --err-bg: #3b1620;
+  --warn: #f0b14a;
+  --warn-bg: #3a2a10;
+  --head-bg: #e6edf7;
+  --head-fg: #081322;
+}
+}
+
+html[data-theme="shadcn"], html[data-theme="shadcn"][data-mode="light"] {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --radius: 8px;
+  --shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --bw: 1px;
+  --head-font: var(--font-sans);
+  --bg: #fafafa;
+  --paper: #ffffff;
+  --ink: #09090b;
+  --ink-2: #71717a;
+  --ink-3: #a1a1aa;
+  --line: #e4e4e7;
+  --line-2: #f0f0f2;
+  --fill: #f4f4f5;
+  --accent: #2563eb;
+  --accent-bg: #eff6ff;
+  --ok: #16a34a;
+  --ok-bg: #f0fdf4;
+  --err: #dc2626;
+  --err-bg: #fef2f2;
+  --warn: #d97706;
+  --warn-bg: #fffbeb;
+  --head-bg: #18181b;
+  --head-fg: #fafafa;
+}
+html[data-theme="shadcn"][data-mode="dark"] {
+  --bg: #09090b;
+  --paper: #121215;
+  --ink: #fafafa;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --line: #27272a;
+  --line-2: #1c1c1f;
+  --fill: #18181b;
+  --accent: #60a5fa;
+  --accent-bg: #172554;
+  --ok: #4ade80;
+  --ok-bg: #052e16;
+  --err: #f87171;
+  --err-bg: #450a0a;
+  --warn: #fbbf24;
+  --warn-bg: #451a03;
+  --head-bg: #fafafa;
+  --head-fg: #18181b;
+}
+@media (prefers-color-scheme: dark) {
+html[data-theme="shadcn"][data-mode="auto"] {
+  --bg: #09090b;
+  --paper: #121215;
+  --ink: #fafafa;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --line: #27272a;
+  --line-2: #1c1c1f;
+  --fill: #18181b;
+  --accent: #60a5fa;
+  --accent-bg: #172554;
+  --ok: #4ade80;
+  --ok-bg: #052e16;
+  --err: #f87171;
+  --err-bg: #450a0a;
+  --warn: #fbbf24;
+  --warn-bg: #451a03;
+  --head-bg: #fafafa;
+  --head-fg: #18181b;
+}
+}
+
+/* Answer me with HTML base — 只引用主题变量，禁止写死颜色（主题 token 见 themes/index.js） */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-sans); font-size: 14px; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+code, pre, kbd { font-family: var(--font-mono); }
+
+/* ── 工具栏 ─────────────────────────────── */
+.am-toolbar {
+  position: fixed; top: 12px; right: 12px; z-index: 10; display: flex; gap: 6px;
+}
+.am-btn {
+  font: 12px/1 var(--font-sans); color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line-2); border-radius: var(--radius); padding: 7px 10px; cursor: pointer;
+}
+.am-btn:hover { border-color: var(--ink-3); }
+.am-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── 页头 ───────────────────────────────── */
+.am-head { margin: 0 0 20px; padding-right: 260px; }
+.am-head h1 { margin: 0; font-size: 24px; line-height: 1.25; letter-spacing: -0.01em; }
+.am-sub { margin: 4px 0 0; color: var(--ink-2); }
+.am-head-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+.am-head-meta b { font-family: var(--font-mono); font-weight: 400; color: var(--ink-3); margin-right: 6px; }
+.am-intro { margin-top: 12px; max-width: 80ch; }
+
+/* ── sheet 图纸板 ────────────────────────── */
+.am-sheet { max-width: 1680px; margin: 0 auto; padding: 32px 28px 40px; }
+.am-frame { position: relative; }
+.am-grid {
+  display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 20px; align-items: start;
+}
+.am-ruler { display: none; }
+html[data-theme="blueprint"] .am-frame { border: 1px solid var(--line); padding: 30px; }
+html[data-theme="blueprint"] .am-frame::before {
+  content: ""; position: absolute; inset: 18px; border: 1px solid var(--line); pointer-events: none;
+}
+html[data-theme="blueprint"] .am-ruler {
+  display: flex; position: absolute; font: 10px/1 var(--font-mono); color: var(--ink-3);
+}
+.am-ruler span { flex: 1; display: flex; align-items: center; justify-content: center; }
+.am-ruler--top, .am-ruler--bottom { left: 18px; right: 18px; height: 18px; }
+.am-ruler--top { top: 0; }
+.am-ruler--bottom { bottom: 0; }
+.am-ruler--left, .am-ruler--right { top: 18px; bottom: 18px; width: 18px; flex-direction: column; }
+.am-ruler--left { left: 0; }
+.am-ruler--right { right: 0; }
+.am-ruler--top span + span, .am-ruler--bottom span + span { border-left: 1px solid var(--line); }
+.am-ruler--left span + span, .am-ruler--right span + span { border-top: 1px solid var(--line); }
+
+/* ── 面板 ───────────────────────────────── */
+.am-panel {
+  background: var(--paper); border: var(--bw) solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); min-width: 0; overflow: hidden;
+}
+.am-panel-head {
+  display: flex; align-items: stretch; gap: 0; border-bottom: var(--bw) solid var(--line); min-height: 34px;
+}
+.am-panel-id {
+  display: flex; align-items: center; justify-content: center; min-width: 34px; padding: 0 8px;
+  background: var(--head-bg); color: var(--head-fg); font-weight: 600; font-size: 14px;
+}
+html[data-theme="shadcn"] .am-panel-id { border-radius: 6px; min-width: 24px; height: 24px; margin: 9px 0 9px 14px; font-size: 12px; }
+html[data-theme="shadcn"] .am-panel-head { border-bottom-width: 1px; }
+.am-panel-head h2 { margin: 0; padding: 7px 12px; font-size: 15px; font-weight: 600; flex: 1; display: flex; align-items: center; }
+.am-panel-meta { align-self: center; padding: 0 12px; font: 11px/1.3 var(--font-mono); color: var(--ink-2); text-align: right; }
+.am-panel-body { padding: 14px 16px 16px; }
+.am-panel-body > * + * { margin-top: 12px; }
+
+/* ── Markdown 正文 ───────────────────────── */
+.am-md > :first-child { margin-top: 0; }
+.am-md > :last-child { margin-bottom: 0; }
+.am-md p { margin: 0 0 8px; }
+.am-md ul, .am-md ol { margin: 0 0 8px; padding-left: 20px; }
+.am-md li + li { margin-top: 3px; }
+.am-md h3, .am-md h4 { margin: 14px 0 6px; font-size: 13px; }
+.am-md a { color: var(--accent); }
+.am-md blockquote { margin: 0 0 8px; padding: 2px 12px; border-left: 3px solid var(--line-2); color: var(--ink-2); }
+.am-md :not(pre) > code { font-size: 0.9em; background: var(--fill); padding: 1px 5px; border-radius: 4px; }
+.am-md hr { border: 0; border-top: 1px solid var(--line-2); margin: 12px 0; }
+.am-md table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.am-md th {
+  text-align: left; font: 11px/1.3 var(--font-mono); color: var(--ink-2); font-weight: 400;
+  padding: 6px 10px; border-bottom: 1px solid var(--line-2);
+}
+.am-md td { padding: 7px 10px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+.am-md tbody tr:nth-child(even) td { background: var(--fill); }
+.am-table-wrap { overflow-x: auto; }
+.am-code {
+  margin: 0; padding: 12px 14px; background: var(--fill); border: 1px solid var(--line-2);
+  border-radius: var(--radius); overflow-x: auto; font-size: 12.5px; line-height: 1.5;
+}
+
+/* ── 状态徽章 ok / no / warn ──────────────── */
+.am-status { white-space: nowrap; font-weight: 500; }
+.am-status--ok { color: var(--ok); }
+.am-status--no { color: var(--err); }
+.am-status--warn { color: var(--warn); }
+.am-status-icon { display: inline-block; width: 1.1em; font-weight: 700; }
+
+/* ── callout ─────────────────────────────── */
+.am-callout {
+  border: 1px solid var(--line-2); border-left: 3px solid var(--accent); background: var(--accent-bg);
+  padding: 10px 14px; border-radius: var(--radius);
+}
+.am-callout--ok { border-left-color: var(--ok); background: var(--ok-bg); }
+.am-callout--warn { border-left-color: var(--warn); background: var(--warn-bg); }
+.am-callout--err { border-left-color: var(--err); background: var(--err-bg); }
+.am-callout-title { font-weight: 600; margin-bottom: 4px; }
+
+/* ── kv 标题栏格 ─────────────────────────── */
+.am-kv {
+  display: grid; grid-template-columns: repeat(var(--kv-cols, 2), minmax(0, 1fr)); margin: 0;
+  border-top: var(--bw) solid var(--line); border-left: var(--bw) solid var(--line);
+}
+.am-kv-cell { border-right: var(--bw) solid var(--line); border-bottom: var(--bw) solid var(--line); padding: 6px 10px 8px; min-width: 0; }
+.am-kv-cell--wide { grid-column: 1 / -1; }
+.am-kv dt { font: 11px/1.4 var(--font-mono); color: var(--ink-2); }
+.am-kv dd { margin: 2px 0 0; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.am-kv-cell--wide dd { font-size: 17px; font-weight: 600; }
+html[data-theme="shadcn"] .am-kv { border-color: var(--line); border-radius: var(--radius); overflow: hidden; }
+
+/* ── timeline ────────────────────────────── */
+.am-timeline { list-style: none; margin: 0; padding: 0; }
+.am-timeline--h { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); padding-top: 4px; }
+.am-timeline--h li { position: relative; text-align: center; padding: 0 6px; }
+.am-timeline--h li::before {
+  content: ""; position: absolute; top: 31px; left: 0; right: 0; border-top: var(--bw) solid var(--line);
+}
+.am-timeline--h li:first-child::before { left: 50%; }
+.am-timeline--h li:last-child::before { right: 50%; }
+.am-tl-when { display: block; font-size: 15px; font-weight: 500; height: 24px; }
+.am-tl-dot {
+  position: relative; display: block; width: 11px; height: 11px; margin: 2px auto 8px;
+  border: var(--bw) solid var(--line); border-radius: 50%; background: var(--paper);
+}
+.am-tl-item--hi .am-tl-dot { background: var(--accent); border-color: var(--accent); }
+.am-tl-title { display: block; font-size: 12.5px; font-weight: 500; }
+.am-tl-text { display: block; font-size: 12px; color: var(--ink-2); line-height: 1.45; }
+.am-timeline--v li { position: relative; padding: 0 0 14px 22px; }
+.am-timeline--v li::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: -6px; border-left: var(--bw) solid var(--line-2); }
+.am-timeline--v li:last-child::before { display: none; }
+.am-timeline--v .am-tl-dot { position: absolute; left: 0; top: 4px; margin: 0; }
+.am-timeline--v .am-tl-when { display: inline; height: auto; font: 12px var(--font-mono); color: var(--ink-2); margin-right: 8px; }
+.am-timeline--v .am-tl-title { display: inline; font-size: 14px; }
+.am-timeline--v .am-tl-text { margin-top: 2px; }
+
+/* ── annot 句子标注 ──────────────────────── */
+.am-annot + .am-annot { border-top: 1px solid var(--line-2); padding-top: 12px; }
+.am-annot-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.am-annot-meta { font: 11px var(--font-mono); font-weight: 400; color: var(--ink-2); }
+.am-annot-scroll { overflow-x: auto; }
+.am-annot-line {
+  position: relative; display: inline-block; white-space: pre; font: 14px/1.6 var(--font-mono);
+  padding-bottom: calc(var(--rows, 0) * 17px + 14px);
+}
+.am-annot-line--wrap { display: block; white-space: normal; padding-bottom: 10px; }
+.am-annot-line--wrap .am-seg { white-space: nowrap; }
+.am-seg { position: relative; }
+.am-seg::after {
+  content: ""; position: absolute; left: 1px; right: 1px; top: calc(100% + 1px); height: 5px;
+  border: 1px solid var(--accent); border-top: 0;
+}
+.am-seg-n {
+  position: absolute; left: 0; top: calc(100% + 8px + var(--row, 0) * 17px);
+  font: 11px/16px var(--font-sans); color: var(--accent); white-space: nowrap;
+}
+.am-seg--err { color: var(--err); }
+.am-seg--err::after { border-color: var(--err); }
+.am-seg--err .am-seg-n { color: var(--err); }
+.am-annot-caption { font-size: 12px; color: var(--ink-2); }
+
+/* ── limits 限值条 ───────────────────────── */
+.am-lim + .am-lim { margin-top: 14px; }
+.am-lim-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 4px; }
+.am-lim-val { font: 12px var(--font-mono); color: var(--accent); white-space: nowrap; }
+.am-lim-track { position: relative; height: 12px; border: 1px solid var(--line-2); background: var(--fill); border-radius: calc(var(--radius) / 2); }
+.am-lim-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-bg); border-right: 1px solid var(--accent); }
+.am-lim-mark { position: absolute; top: -4px; bottom: -4px; border-left: 2px solid var(--accent); }
+.am-lim.is-over .am-lim-fill { background: var(--err-bg); border-right-color: var(--err); }
+.am-lim.is-over .am-lim-val { color: var(--err); }
+.am-lim-ticks { position: relative; height: 16px; font: 10px/16px var(--font-mono); color: var(--ink-3); }
+.am-lim-ticks span { position: absolute; transform: translateX(-50%); }
+.am-lim-ticks span:first-child { transform: none; }
+.am-lim-note { font-size: 11px; color: var(--ink-2); margin-left: 6px; }
+
+/* ── tree 结构树 ─────────────────────────── */
+.am-tree { font-size: 13px; }
+.am-tree-root { display: flex; justify-content: center; position: relative; padding-bottom: 18px; }
+.am-tree-root::after { content: ""; position: absolute; bottom: 0; left: 50%; height: 18px; border-left: var(--bw) solid var(--line); }
+.am-tree-root--solo { padding-bottom: 12px; }
+.am-tree-root--solo::after { display: none; }
+.am-tree-box {
+  border: var(--bw) solid var(--line); background: var(--paper); padding: 6px 14px; text-align: center;
+  border-radius: var(--radius); font-weight: 600;
+}
+.am-tree-box small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.am-tree-box--root { background: var(--accent-bg); font-size: 15px; padding: 8px 28px; }
+.am-tree-cols { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); }
+.am-tree-col { position: relative; padding: 18px 8px 0; min-width: 0; }
+.am-tree-col::before { content: ""; position: absolute; top: 0; left: 0; right: 0; border-top: var(--bw) solid var(--line); }
+.am-tree-col:first-child::before { left: 50%; }
+.am-tree-col:last-child::before { right: 50%; }
+.am-tree-col::after { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: var(--bw) solid var(--line); }
+.am-tree-list, .am-tree-list ul { list-style: none; margin: 0; padding: 0; }
+.am-tree-col > .am-tree-list { margin: 8px 0 0 14px; }
+.am-tree-list ul { margin-left: 16px; }
+.am-tree-list li { position: relative; padding: 3px 0 3px 18px; }
+.am-tree-list li::before { content: ""; position: absolute; left: 0; top: 0.95em; width: 12px; border-top: 1px solid var(--ink-3); }
+.am-tree-list li::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 1px solid var(--ink-3); }
+.am-tree-list li:last-child::after { bottom: auto; height: 0.95em; }
+.am-tree-tag { font: 11px var(--font-mono); color: var(--ink-3); margin-right: 4px; }
+.am-tree code { font: 12px var(--font-mono); }
+.am-tree-sub { display: block; font-size: 11.5px; color: var(--ink-2); }
+.am-tree-hi > .am-tree-label { color: var(--accent); font-weight: 600; }
+
+/* ── 图（flow / sequence）───────────────── */
+.am-diagram { margin: 0; overflow-x: auto; text-align: center; }
+.am-diagram svg { max-width: 100%; height: auto; font-family: var(--font-sans); }
+.am-diagram text { fill: var(--ink); font-size: 13px; }
+.am-node-shape { fill: var(--paper); stroke: var(--line); stroke-width: var(--bw); }
+.am-node--hi .am-node-shape { fill: var(--accent-bg); stroke: var(--accent); }
+.am-node--hi text { fill: var(--accent); font-weight: 600; }
+.am-edge { fill: none; stroke: var(--ink-2); stroke-width: 1.3; }
+.am-edge--dashed { stroke-dasharray: 5 4; }
+.am-arrow { fill: var(--ink-2); }
+.am-edge-label rect { fill: var(--paper); }
+.am-diagram .am-edge-label text { fill: var(--accent); font-size: 11.5px; }
+.am-cluster { fill: var(--fill); stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 4 3; }
+.am-diagram .am-cluster-label { fill: var(--ink-2); font: 11px var(--font-mono); }
+.am-lifeline { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; }
+.am-actor { fill: var(--paper); stroke: var(--line); stroke-width: var(--bw); }
+.am-note { fill: var(--warn-bg); stroke: var(--warn); stroke-width: 1; }
+.am-diagram .am-step { fill: var(--ink-3); font: 10px var(--font-mono); }
+
+/* ── doc 线性讲解 ────────────────────────── */
+.am-doc { max-width: 1120px; margin: 0 auto; padding: 40px 28px 64px; }
+.am-doc-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; align-items: start; }
+.am-doc-layout--notoc { grid-template-columns: minmax(0, 1fr); max-width: 860px; }
+.am-toc { position: sticky; top: 24px; font-size: 13px; }
+.am-toc a { display: block; color: var(--ink-2); text-decoration: none; padding: 4px 0 4px 10px; border-left: 2px solid var(--line-2); }
+.am-toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+.am-doc-body > .am-panel + .am-panel { margin-top: 20px; }
+
+/* ── 响应式与打印 ─────────────────────────── */
+@media (max-width: 1100px) {
+  .am-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .am-grid > .am-panel { grid-column: auto !important; }
+  .am-grid > .am-panel.am-span-wide { grid-column: 1 / -1 !important; }
+}
+@media (max-width: 760px) {
+  .am-sheet, .am-doc { padding: 56px 12px 24px; }
+  .am-head { padding-right: 0; }
+  .am-grid { grid-template-columns: minmax(0, 1fr); }
+  .am-grid > .am-panel.am-span-wide { grid-column: auto !important; }
+  html[data-theme="blueprint"] .am-frame { padding: 0; border: 0; }
+  html[data-theme="blueprint"] .am-frame::before, html[data-theme="blueprint"] .am-ruler { display: none; }
+  .am-doc-layout { grid-template-columns: minmax(0, 1fr); }
+  .am-toc { position: static; }
+  .am-timeline--h { grid-template-columns: minmax(0, 1fr); }
+  .am-tree-cols { grid-template-columns: minmax(0, 1fr); }
+}
+.am-colophon { text-align: center; padding: 0 0 28px; font: 11px var(--font-mono); color: var(--ink-3); }
+
+@media print {
+  .am-toolbar { display: none; }
+  body { background: var(--paper); }
+  .am-panel { break-inside: avoid; box-shadow: none; }
+}
+.am-panel--bare { border: 0; background: transparent; box-shadow: none; }
+.am-panel--bare > .am-panel-body { padding: 0; }
+.am-panel--bare .am-kv { background: var(--paper); }
+
+</style>
+</head>
+<body>
+<div class="am-toolbar">
+<button class="am-btn" type="button" data-am="theme" data-labels="{&quot;blueprint&quot;:&quot;主题：图纸&quot;,&quot;shadcn&quot;:&quot;主题：卡片&quot;}">主题：图纸</button>
+<button class="am-btn" type="button" data-am="mode" data-labels="{&quot;auto&quot;:&quot;明暗：跟随系统&quot;,&quot;light&quot;:&quot;明暗：亮&quot;,&quot;dark&quot;:&quot;明暗：暗&quot;}">明暗：跟随系统</button>
+<button class="am-btn" type="button" data-am="copy" data-done="已复制 ✓">复制源稿</button>
+</div>
+<main class="am-doc">
+<header class="am-head"><h1>JumpJet VM 如何執行 bytecode</h1><p class="am-sub">從 opcode 協定、stack machine 到 fetch-decode-execute loop</p><div class="am-head-meta"><span><b>source</b>src/bytecode.js、src/compiler.js、src/vm.js</span></div></header>
+<div class="am-doc-layout">
+<nav class="am-toc" aria-label="目录"><a href="#panel-A">A · A. 核心原理</a><a href="#panel-B">B · B. Bytecode program 的組成</a><a href="#panel-C">C · C. Fetch-decode-execute loop</a><a href="#panel-D">D · D. 實際執行 `1 + 2 * 3`</a><a href="#panel-E">E · E. Stack machine 為甚麼可行</a><a href="#panel-F">F · F. VM 如何拒絕壞掉的 bytecode</a><a href="#panel-G">G · G. 它與真正 CPU 的關係</a></nav><div class="am-doc-body">
+<section class="am-panel am-span-wide" id="panel-A">
+<header class="am-panel-head"><span class="am-panel-id">A</span><h2>A. 核心原理</h2></header>
+<div class="am-panel-body"><div class="am-callout am-callout--ok" role="note"><div class="am-callout-title">一句話答案</div><div class="am-callout-body am-md"><p>VM 能執行 bytecode，因為 compiler 與 VM 對每個 opcode 的數字、operand 格式及 stack effect 有相同定義。</p>
+</div></div>
+<div class="am-md"><p>VM 不會重新理解 JavaScript 文法。Compiler 已經把 <code>+</code>、變數、比較與條件分支翻譯成簡單指令。VM 逐一讀取數字，使用 <code>switch</code> 找到對應操作，再修改自己的執行狀態。</p>
+</div>
+<figure class="am-diagram am-flow"><svg viewBox="0 0 910 63" width="910" height="63" role="img" aria-label="流程图：JavaScript、Compiler、Bytecode、VM、結果" xmlns="http://www.w3.org/2000/svg"><defs><marker id="am1-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="am-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs><g></g><g><path class="am-edge" d="M108.6,31.5 L134.6,31.5 Q160.6,31.5 186.6,31.5 L212.6,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="132.6" y="22.5" width="56" height="18" rx="3"/><text x="160.6" y="31.5" text-anchor="middle" dominant-baseline="central">翻譯語意</text></g><path class="am-edge" d="M294.9,31.5 L334.2,31.5 Q373.6,31.5 412.9,31.5 L452.3,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="318.9" y="22.5" width="109.4" height="18" rx="3"/><text x="373.6" y="31.5" text-anchor="middle" dominant-baseline="central">opcode 與 operand</text></g><path class="am-edge" d="M536.9,31.5 L562.9,31.5 Q588.9,31.5 614.9,31.5 L640.9,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="560.9" y="22.5" width="56" height="18" rx="3"/><text x="588.9" y="31.5" text-anchor="middle" dominant-baseline="central">指令資料</text></g><path class="am-edge" d="M704.9,31.5 L736.7,31.5 Q768.4,31.5 800.2,31.5 L831.9,31.5" marker-end="url(#am1-arrow)"/><g class="am-edge-label"><rect x="728.9" y="22.5" width="79" height="18" rx="3"/><text x="768.4" y="31.5" text-anchor="middle" dominant-baseline="central">執行狀態變化</text></g></g><g><g class="am-node am-node--rect"><rect class="am-node-shape" x="14" y="14" width="94.6" height="35" rx="3"/><text x="61.3" y="31.5" text-anchor="middle" dominant-baseline="central">JavaScript</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="212.6" y="14" width="82.3" height="35" rx="3"/><text x="253.7" y="31.5" text-anchor="middle" dominant-baseline="central">Compiler</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="452.3" y="14" width="84.7" height="35" rx="3"/><text x="494.6" y="31.5" text-anchor="middle" dominant-baseline="central">Bytecode</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="640.9" y="14" width="64" height="35" rx="3"/><text x="672.9" y="31.5" text-anchor="middle" dominant-baseline="central">VM</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="831.9" y="14" width="64" height="35" rx="3"/><text x="863.9" y="31.5" text-anchor="middle" dominant-baseline="central">結果</text></g></g></svg></figure></div>
+</section>
+<section class="am-panel am-span-wide" id="panel-B">
+<header class="am-panel-head"><span class="am-panel-id">B</span><h2>B. Bytecode program 的組成</h2></header>
+<div class="am-panel-body"><div class="am-tree"><ul class="am-tree-list"><li><span class="am-tree-label">BytecodeProgram</span><ul><li><span class="am-tree-label">version</span><span class="am-tree-sub">指令格式版本，目前為 1</span></li><li><span class="am-tree-label">constants</span><span class="am-tree-sub">number 與 boolean 常數池</span></li><li><span class="am-tree-label">code</span><span class="am-tree-sub">opcode 與 operand 組成的整數序列</span></li><li><span class="am-tree-label">slotCount</span><span class="am-tree-sub">變數儲存空間數量</span></li></ul></li><li><span class="am-tree-label">VM 執行狀態</span><ul><li><span class="am-tree-label">instructionPointer</span><span class="am-tree-sub">下一個要讀取的 code index</span></li><li><span class="am-tree-label">stack</span><span class="am-tree-sub">運算用 LIFO stack</span></li><li><span class="am-tree-label">slots</span><span class="am-tree-sub">區域變數的 numeric slot</span></li><li><span class="am-tree-label">initializedSlots</span><span class="am-tree-sub">防止讀取未初始化 slot</span></li></ul></li></ul></div>
+<div class="am-md"><p>目前的 <code>code</code> 是 JavaScript integer array，不是真正壓縮成 8-bit 的檔案。它在架構上仍是 bytecode，因為每個整數代表 VM 指令或 operand，而不是原始語法。</p>
+</div></div>
+</section>
+<section class="am-panel am-span-wide" id="panel-C">
+<header class="am-panel-head"><span class="am-panel-id">C</span><h2>C. Fetch-decode-execute loop</h2></header>
+<div class="am-panel-body"><figure class="am-diagram am-seq"><svg viewBox="0 0 708 366" width="708" height="366" role="img" aria-label="时序图：VM、Code、OpcodeMap、StackSlots、Caller" xmlns="http://www.w3.org/2000/svg"><defs><marker id="am2-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="am-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs><line class="am-lifeline" x1="54" y1="42" x2="54" y2="362"/><rect class="am-actor" x="12" y="8" width="84" height="34" rx="2"/><text x="54" y="25" text-anchor="middle" dominant-baseline="central" font-weight="600">VM</text><line class="am-lifeline" x1="290" y1="42" x2="290" y2="362"/><rect class="am-actor" x="248" y="8" width="84" height="34" rx="2"/><text x="290" y="25" text-anchor="middle" dominant-baseline="central" font-weight="600">Code</text><line class="am-lifeline" x1="410.7" y1="42" x2="410.7" y2="362"/><rect class="am-actor" x="360" y="8" width="101.3" height="34" rx="2"/><text x="410.7" y="25" text-anchor="middle" dominant-baseline="central" font-weight="600">OpcodeMap</text><line class="am-lifeline" x1="536.6" y1="42" x2="536.6" y2="362"/><rect class="am-actor" x="489.3" y="8" width="94.6" height="34" rx="2"/><text x="536.6" y="25" text-anchor="middle" dominant-baseline="central" font-weight="600">StackSlots</text><line class="am-lifeline" x1="653.9" y1="42" x2="653.9" y2="362"/><rect class="am-actor" x="611.9" y="8" width="84" height="34" rx="2"/><text x="653.9" y="25" text-anchor="middle" dominant-baseline="central" font-weight="600">Caller</text><text x="172" y="70" text-anchor="middle">依 instructionPointer 讀取 opcode</text><path class="am-edge" d="M54,80 L288,80" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="74" text-anchor="start">1</text><text x="94" y="108" dominant-baseline="central">instructionPointer 加 1</text><path class="am-edge" d="M54,104 H84 V124 H56" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="114" text-anchor="start">2</text><text x="232.3" y="158" text-anchor="middle">將數字解碼成指令名稱</text><path class="am-edge" d="M54,168 L408.7,168" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="162" text-anchor="start">3</text><text x="172" y="198" text-anchor="middle">指令需要時讀取 operand</text><path class="am-edge" d="M54,208 L288,208" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="202" text-anchor="start">4</text><text x="295.3" y="238" text-anchor="middle">執行指令效果</text><path class="am-edge" d="M54,248 L534.6,248" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="242" text-anchor="start">5</text><text x="94" y="276" dominant-baseline="central">Return 前繼續下一輪</text><path class="am-edge" d="M54,272 H84 V292 H56" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="282" text-anchor="start">6</text><text x="353.9" y="326" text-anchor="middle">Return 彈出並回傳結果</text><path class="am-edge am-edge--dashed" d="M54,336 L651.9,336" marker-end="url(#am2-arrow)"/><text class="am-step" x="60" y="330" text-anchor="start">7</text></svg></figure>
+<div class="am-md"><p><code>Constant</code> 讀取下一個整數作為 constant index。<code>LoadSlot</code> 與 <code>StoreSlot</code> 把下一個整數當作 slot index。<code>Jump</code> 直接改寫 instruction pointer，因此 VM 能形成條件分支與迴圈。</p>
+</div></div>
+</section>
+<section class="am-panel am-span-wide" id="panel-D">
+<header class="am-panel-head"><span class="am-panel-id">D</span><h2>D. 實際執行 `1 + 2 * 3`</h2></header>
+<div class="am-panel-body"><div class="am-md"><p>原始程式包含宣告與最後結果：<code>let answer = 1 + 2 * 3; answer;</code></p>
+</div>
+<dl class="am-kv" style="--kv-cols: 2"><div class="am-kv-cell"><dt>constants</dt><dd>[1, 2, 3]</dd></div><div class="am-kv-cell"><dt>code</dt><dd>[0,0, 0,1, 0,2, 3, 1, 5,0, 6,0, 8]</dd></div><div class="am-kv-cell"><dt>slotCount</dt><dd>1</dd></div><div class="am-kv-cell"><dt>result</dt><dd>7</dd></div></dl>
+<div class="am-md"><div class="am-table-wrap"><table>
+<thead>
+<tr>
+<th align="right">IP</th>
+<th>解碼後指令</th>
+<th>Stack 執行後</th>
+<th>Slots 執行後</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">0</td>
+<td><code>Constant 0</code></td>
+<td><code>[1]</code></td>
+<td><code>[未初始化]</code></td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td><code>Constant 1</code></td>
+<td><code>[1, 2]</code></td>
+<td><code>[未初始化]</code></td>
+</tr>
+<tr>
+<td align="right">4</td>
+<td><code>Constant 2</code></td>
+<td><code>[1, 2, 3]</code></td>
+<td><code>[未初始化]</code></td>
+</tr>
+<tr>
+<td align="right">6</td>
+<td><code>Multiply</code></td>
+<td><code>[1, 6]</code></td>
+<td><code>[未初始化]</code></td>
+</tr>
+<tr>
+<td align="right">7</td>
+<td><code>Add</code></td>
+<td><code>[7]</code></td>
+<td><code>[未初始化]</code></td>
+</tr>
+<tr>
+<td align="right">8</td>
+<td><code>StoreSlot 0</code></td>
+<td><code>[]</code></td>
+<td><code>[7]</code></td>
+</tr>
+<tr>
+<td align="right">10</td>
+<td><code>LoadSlot 0</code></td>
+<td><code>[7]</code></td>
+<td><code>[7]</code></td>
+</tr>
+<tr>
+<td align="right">12</td>
+<td><code>Return</code></td>
+<td><code>[]</code></td>
+<td><code>[7]</code></td>
+</tr>
+</tbody></table></div>
+<p>乘法先出現在 bytecode，所以 VM 不需要知道 operator precedence。Parser 和 compiler 已經決定正確順序。</p>
+</div></div>
+</section>
+<section class="am-panel am-span-wide" id="panel-E">
+<header class="am-panel-head"><span class="am-panel-id">E</span><h2>E. Stack machine 為甚麼可行</h2></header>
+<div class="am-panel-body"><div class="am-md"><p>每個 opcode 都有固定的 stack effect：</p>
+<div class="am-table-wrap"><table>
+<thead>
+<tr>
+<th>Opcode</th>
+<th>執行前</th>
+<th>執行後</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Constant i</code></td>
+<td><code>...</code></td>
+<td><code>... value</code></td>
+</tr>
+<tr>
+<td><code>Add</code></td>
+<td><code>... left right</code></td>
+<td><code>... result</code></td>
+</tr>
+<tr>
+<td><code>Negate</code></td>
+<td><code>... value</code></td>
+<td><code>... -value</code></td>
+</tr>
+<tr>
+<td><code>StoreSlot i</code></td>
+<td><code>... value</code></td>
+<td><code>...</code></td>
+</tr>
+<tr>
+<td><code>LoadSlot i</code></td>
+<td><code>...</code></td>
+<td><code>... value</code></td>
+</tr>
+<tr>
+<td><code>JumpIfFalse address</code></td>
+<td><code>... condition</code></td>
+<td><code>...</code></td>
+</tr>
+<tr>
+<td><code>Return</code></td>
+<td><code>... value</code></td>
+<td>回傳 <code>value</code></td>
+</tr>
+</tbody></table></div>
+<p>Binary instruction 會先 pop 右值，再 pop 左值，運算後 push 結果。這個規則讓複雜 expression 能拆成一串小指令，不必在 VM 中保留 AST。</p>
+</div></div>
+</section>
+<section class="am-panel am-span-wide" id="panel-F">
+<header class="am-panel-head"><span class="am-panel-id">F</span><h2>F. VM 如何拒絕壞掉的 bytecode</h2></header>
+<div class="am-panel-body"><figure class="am-diagram am-flow"><svg viewBox="0 0 1703 180" width="1703" height="180" role="img" aria-label="流程图：Bytecode、格式正確?、執行、拒絕、operand 合法?、下一步、stack 足夠?、指令效果" xmlns="http://www.w3.org/2000/svg"><defs><marker id="am3-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="am-arrow" d="M0,0 L10,5 L0,10 z"/></marker></defs><g></g><g><path class="am-edge" d="M98.7,73 L110.2,73 Q121.7,73 133.2,73 L144.7,73" marker-end="url(#am3-arrow)"/><path class="am-edge" d="M260,79.7 L339.7,90.3 Q419.5,101 491.4,101 L563.4,101" marker-end="url(#am3-arrow)"/><g class="am-edge-label"><rect x="299.6" y="92" width="239.8" height="18" rx="3"/><text x="419.5" y="101" text-anchor="middle" dominant-baseline="central">version、constants、code、slotCount 合法</text></g><path class="am-edge" d="M252.1,63 L335.8,43 Q419.5,23 507.4,23 Q595.4,23 622.9,23 Q650.4,23 704.3,23 Q758.1,23 854.4,23 Q950.7,23 1021.3,23 Q1092,23 1156.6,23 Q1221.3,23 1306.1,23 Q1390.9,23 1463.9,23 Q1536.8,23 1576.8,33.4 L1616.8,43.7" marker-end="url(#am3-arrow)"/><g class="am-edge-label"><rect x="899.4" y="14" width="102.5" height="18" rx="3"/><text x="950.7" y="23" text-anchor="middle" dominant-baseline="central">program 結構錯誤</text></g><path class="am-edge" d="M627.4,101 L638.9,101 Q650.4,101 661.9,101 L673.4,101" marker-end="url(#am3-arrow)"/><path class="am-edge" d="M817,109.6 L883.8,119.3 Q950.7,129 1004.6,129 L1058.5,129" marker-end="url(#am3-arrow)"/><g class="am-edge-label"><rect x="866.9" y="120" width="167.6" height="18" rx="3"/><text x="950.7" y="129" text-anchor="middle" dominant-baseline="central">index 與 jump target 在範圍內</text></g><path class="am-edge" d="M812.5,91 L881.6,78.2 Q950.7,65.5 1021.3,65.5 Q1092,65.5 1156.6,65.5 Q1221.3,65.5 1306.1,65.5 Q1390.9,65.5 1463.9,65.5 Q1536.8,65.5 1576.8,60.7 L1616.8,55.9" marker-end="url(#am3-arrow)"/><g class="am-edge-label"><rect x="1149.5" y="56.5" width="143.6" height="18" rx="3"/><text x="1221.3" y="65.5" text-anchor="middle" dominant-baseline="central">missing 或 out of bounds</text></g><path class="am-edge" d="M1125.5,129 L1173.4,129 Q1221.3,129 1269.2,129 L1317.1,129" marker-end="url(#am3-arrow)"/><path class="am-edge" d="M1445.9,136.2 L1491.3,142.1 Q1536.8,148 1572.8,148 L1608.8,148" marker-end="url(#am3-arrow)"/><g class="am-edge-label"><rect x="1520.3" y="139" width="33" height="18" rx="3"/><text x="1536.8" y="148" text-anchor="middle" dominant-baseline="central">執行</text></g><path class="am-edge" d="M1444.4,121.3 L1490.6,114.6 Q1536.8,108 1576.8,88 L1616.8,68" marker-end="url(#am3-arrow)"/><g class="am-edge-label"><rect x="1488.8" y="99" width="96" height="18" rx="3"/><text x="1536.8" y="108" text-anchor="middle" dominant-baseline="central">stack underflow</text></g></g><g><g class="am-node am-node--rect"><rect class="am-node-shape" x="14" y="55.5" width="84.7" height="35" rx="3"/><text x="56.3" y="73" text-anchor="middle" dominant-baseline="central">Bytecode</text></g><g class="am-node am-node--diamond"><polygon class="am-node-shape" points="210.1,45 275.6,73 210.1,101 144.7,73"/><text x="210.1" y="73" text-anchor="middle" dominant-baseline="central">格式正確?</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="563.4" y="83.5" width="64" height="35" rx="3"/><text x="595.4" y="101" text-anchor="middle" dominant-baseline="central">執行</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="1616.8" y="34.5" width="64" height="35" rx="3"/><text x="1648.8" y="52" text-anchor="middle" dominant-baseline="central">拒絕</text></g><g class="am-node am-node--diamond"><polygon class="am-node-shape" points="758.1,73 842.9,101 758.1,129 673.4,101"/><text x="758.1" y="101" text-anchor="middle" dominant-baseline="central">operand 合法?</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="1058.5" y="111.5" width="67" height="35" rx="3"/><text x="1092" y="129" text-anchor="middle" dominant-baseline="central">下一步</text></g><g class="am-node am-node--diamond"><polygon class="am-node-shape" points="1390.9,101 1464.8,129 1390.9,157 1317.1,129"/><text x="1390.9" y="129" text-anchor="middle" dominant-baseline="central">stack 足夠?</text></g><g class="am-node am-node--rect"><rect class="am-node-shape" x="1608.8" y="130.5" width="80" height="35" rx="3"/><text x="1648.8" y="148" text-anchor="middle" dominant-baseline="central">指令效果</text></g></g></svg></figure>
+<div class="am-md"><p>VM 還會拒絕 unknown opcode、未初始化 slot，以及沒有 <code>Return</code> 就結束的程式。這些檢查保護 VM 邊界，但 compiler 仍負責產生語意正確的指令順序。</p>
+</div></div>
+</section>
+<section class="am-panel am-span-wide" id="panel-G">
+<header class="am-panel-head"><span class="am-panel-id">G</span><h2>G. 它與真正 CPU 的關係</h2></header>
+<div class="am-panel-body"><div class="am-md"><div class="am-table-wrap"><table>
+<thead>
+<tr>
+<th>JumpJet VM</th>
+<th>真正 CPU</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Opcode 是自訂整數</td>
+<td>Opcode 由硬體 ISA 定義</td>
+</tr>
+<tr>
+<td><code>switch</code> 執行指令</td>
+<td>電路解碼並執行指令</td>
+</tr>
+<tr>
+<td>Stack 與 slots 是 JavaScript array</td>
+<td>Register 與 memory 是硬體狀態</td>
+</tr>
+<tr>
+<td>Instruction pointer 是 JavaScript number</td>
+<td>Program counter 是 CPU register</td>
+</tr>
+<tr>
+<td>執行結果仍由 Node.js 或瀏覽器完成</td>
+<td>直接由硬體完成</td>
+</tr>
+</tbody></table></div>
+<p>JumpJet VM 是 interpreter。它用 host JavaScript 模擬一顆簡單的 stack CPU。Bytecode 並不會自行執行，真正執行工作的仍是 <code>execute()</code> 裡的 loop 與每個 opcode handler。</p>
+</div></div>
+</section>
+</div>
+</div>
+</main>
+<footer class="am-colophon">Generated by Answer me with HTML 0.2.2 · 2026-10-16 18:32</footer>
+<textarea id="am-source" hidden readonly aria-hidden="true">---
+template: doc
+theme: blueprint
+title: JumpJet VM 如何執行 bytecode
+subtitle: 從 opcode 協定、stack machine 到 fetch-decode-execute loop
+source: src/bytecode.js、src/compiler.js、src/vm.js
+---
+
+## A. 核心原理 {span=2}
+
+```callout ok 一句話答案
+VM 能執行 bytecode，因為 compiler 與 VM 對每個 opcode 的數字、operand 格式及 stack effect 有相同定義。
+```
+
+VM 不會重新理解 JavaScript 文法。Compiler 已經把 `+`、變數、比較與條件分支翻譯成簡單指令。VM 逐一讀取數字，使用 `switch` 找到對應操作，再修改自己的執行狀態。
+
+```flow LR
+JavaScript -&gt; Compiler: 翻譯語意
+Compiler -&gt; Bytecode: opcode 與 operand
+Bytecode -&gt; VM: 指令資料
+VM -&gt; 結果: 執行狀態變化
+```
+
+## B. Bytecode program 的組成 {span=2}
+
+```tree list
+BytecodeProgram
+  version | 指令格式版本，目前為 1
+  constants | number 與 boolean 常數池
+  code | opcode 與 operand 組成的整數序列
+  slotCount | 變數儲存空間數量
+VM 執行狀態
+  instructionPointer | 下一個要讀取的 code index
+  stack | 運算用 LIFO stack
+  slots | 區域變數的 numeric slot
+  initializedSlots | 防止讀取未初始化 slot
+```
+
+目前的 `code` 是 JavaScript integer array，不是真正壓縮成 8-bit 的檔案。它在架構上仍是 bytecode，因為每個整數代表 VM 指令或 operand，而不是原始語法。
+
+## C. Fetch-decode-execute loop {span=2}
+
+```sequence num
+VM -&gt; Code: 依 instructionPointer 讀取 opcode
+VM -&gt; VM: instructionPointer 加 1
+VM -&gt; OpcodeMap: 將數字解碼成指令名稱
+VM -&gt; Code: 指令需要時讀取 operand
+VM -&gt; StackSlots: 執行指令效果
+VM -&gt; VM: Return 前繼續下一輪
+VM --&gt; Caller: Return 彈出並回傳結果
+```
+
+`Constant` 讀取下一個整數作為 constant index。`LoadSlot` 與 `StoreSlot` 把下一個整數當作 slot index。`Jump` 直接改寫 instruction pointer，因此 VM 能形成條件分支與迴圈。
+
+## D. 實際執行 `1 + 2 * 3` {span=2}
+
+原始程式包含宣告與最後結果：`let answer = 1 + 2 * 3; answer;`
+
+```kv cols=2
+constants: [1, 2, 3]
+code: [0,0, 0,1, 0,2, 3, 1, 5,0, 6,0, 8]
+slotCount: 1
+result: 7
+```
+
+| IP | 解碼後指令 | Stack 執行後 | Slots 執行後 |
+|---:|---|---|---|
+| 0 | `Constant 0` | `[1]` | `[未初始化]` |
+| 2 | `Constant 1` | `[1, 2]` | `[未初始化]` |
+| 4 | `Constant 2` | `[1, 2, 3]` | `[未初始化]` |
+| 6 | `Multiply` | `[1, 6]` | `[未初始化]` |
+| 7 | `Add` | `[7]` | `[未初始化]` |
+| 8 | `StoreSlot 0` | `[]` | `[7]` |
+| 10 | `LoadSlot 0` | `[7]` | `[7]` |
+| 12 | `Return` | `[]` | `[7]` |
+
+乘法先出現在 bytecode，所以 VM 不需要知道 operator precedence。Parser 和 compiler 已經決定正確順序。
+
+## E. Stack machine 為甚麼可行 {span=2}
+
+每個 opcode 都有固定的 stack effect：
+
+| Opcode | 執行前 | 執行後 |
+|---|---|---|
+| `Constant i` | `...` | `... value` |
+| `Add` | `... left right` | `... result` |
+| `Negate` | `... value` | `... -value` |
+| `StoreSlot i` | `... value` | `...` |
+| `LoadSlot i` | `...` | `... value` |
+| `JumpIfFalse address` | `... condition` | `...` |
+| `Return` | `... value` | 回傳 `value` |
+
+Binary instruction 會先 pop 右值，再 pop 左值，運算後 push 結果。這個規則讓複雜 expression 能拆成一串小指令，不必在 VM 中保留 AST。
+
+## F. VM 如何拒絕壞掉的 bytecode {span=2}
+
+```flow LR
+Bytecode -&gt; {格式正確?}
+{格式正確?} -&gt; 執行: version、constants、code、slotCount 合法
+{格式正確?} -&gt; 拒絕: program 結構錯誤
+執行 -&gt; {operand 合法?}
+{operand 合法?} -&gt; 下一步: index 與 jump target 在範圍內
+{operand 合法?} -&gt; 拒絕: missing 或 out of bounds
+下一步 -&gt; {stack 足夠?}
+{stack 足夠?} -&gt; 指令效果: 執行
+{stack 足夠?} -&gt; 拒絕: stack underflow
+```
+
+VM 還會拒絕 unknown opcode、未初始化 slot，以及沒有 `Return` 就結束的程式。這些檢查保護 VM 邊界，但 compiler 仍負責產生語意正確的指令順序。
+
+## G. 它與真正 CPU 的關係 {span=2}
+
+| JumpJet VM | 真正 CPU |
+|---|---|
+| Opcode 是自訂整數 | Opcode 由硬體 ISA 定義 |
+| `switch` 執行指令 | 電路解碼並執行指令 |
+| Stack 與 slots 是 JavaScript array | Register 與 memory 是硬體狀態 |
+| Instruction pointer 是 JavaScript number | Program counter 是 CPU register |
+| 執行結果仍由 Node.js 或瀏覽器完成 | 直接由硬體完成 |
+
+JumpJet VM 是 interpreter。它用 host JavaScript 模擬一顆簡單的 stack CPU。Bytecode 並不會自行執行，真正執行工作的仍是 `execute()` 裡的 loop 與每個 opcode handler。
+</textarea>
+<script>
+(() => {
+  const root = document.documentElement;
+  const cycle = (list, cur) => list[(list.indexOf(cur) + 1) % list.length];
+  const label = (btn, value) => {
+    const map = JSON.parse(btn.dataset.labels || '{}');
+    btn.textContent = map[value] || value;
+  };
+  const bind = (name, attr, values) => {
+    const btn = document.querySelector(`[data-am="${name}"]`);
+    if (!btn) return;
+    label(btn, root.getAttribute(attr));
+    btn.addEventListener('click', () => {
+      const next = cycle(values, root.getAttribute(attr));
+      root.setAttribute(attr, next);
+      label(btn, next);
+    });
+  };
+  bind('theme', 'data-theme', ['blueprint', 'shadcn']);
+  bind('mode', 'data-mode', ['auto', 'light', 'dark']);
+
+  const copyBtn = document.querySelector('[data-am="copy"]');
+  copyBtn?.addEventListener('click', async () => {
+    const text = document.getElementById('am-source').value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.append(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    const original = copyBtn.textContent;
+    copyBtn.textContent = copyBtn.dataset.done;
+    setTimeout(() => { copyBtn.textContent = original; }, 1400);
+  });
+})();
+</script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 status: implemented
 ---
 
+> 編輯器的預設範例已隨語言切片更新。最新文法定義在 [0003-control-flow-and-semantic-analysis.md](0003-control-flow-and-semantic-analysis.md)。
+
 # Spec: browser editor
 
 ## Objective
