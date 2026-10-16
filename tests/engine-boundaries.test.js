@@ -155,6 +155,41 @@ test("executes ordinary arithmetic under an instruction budget", () => {
     assert.equal(run(result.program, { maxInstructions: 20 }), 7);
 });
 
+test("reports parser diagnostics for excessive source depth without throwing", () => {
+    const source = "(".repeat(20000) + "1" + ")".repeat(20000) + ";";
+    const result = compile(source);
+
+    assert.equal(result.ok, false);
+    assert.ok(result.diagnostics.length > 0);
+    assert.equal(result.diagnostics[0].stage, "parser");
+});
+
+for (const [name, source] of [
+    ["unary operators", "!".repeat(20000) + "1;"],
+    ["assignment operators", "let value = 0; " + "value = ".repeat(20000) + "1;"],
+    ["nested blocks", "{".repeat(20000) + "1;" + "}".repeat(20000) + "1;"],
+    ["else-if statements", "if (false) {} else ".repeat(20000) + "{ } 1;"],
+    ["left-associative binary expressions", "1 + ".repeat(20000) + "1;"],
+]) {
+    test(`reports parser depth diagnostics for excessive ${name}`, () => {
+        const result = compile(source);
+
+        assert.equal(result.ok, false);
+        assert.equal(result.diagnostics[0].stage, "parser");
+        assert.match(result.diagnostics[0].message, /(?:nesting|depth).*limit/i);
+    });
+}
+
+test("executes valid source with thirty levels of mixed nesting", () => {
+    const source = "let value = 0; " + "if (true) { ".repeat(30)
+        + "value = " + "!(".repeat(30) + "true" + ")".repeat(30) + ";"
+        + " }".repeat(30) + " value;";
+    const result = compile(source);
+
+    assert.equal(result.ok, true);
+    assert.equal(run(result.program), true);
+});
+
 for (const [name, entry] of [["execute", execute], ["run", run]]) {
     test(`${name} counts Return toward the exact instruction budget`, () => {
         const bytecode = program([Opcode.Constant, 0, Opcode.Return], [42]);

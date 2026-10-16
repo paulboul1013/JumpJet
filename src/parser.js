@@ -1,5 +1,7 @@
 import { TokenKind } from "./lexer.js";
 
+export const MAX_SYNTAX_DEPTH = 128;
+
 const additiveOperators = Object.freeze({
     [TokenKind.Plus]: "+",
     [TokenKind.Minus]: "-",
@@ -38,6 +40,7 @@ export function parse(source, tokens) {
 
     let position = 0;
     let diagnostic = null;
+    let nestingDepth = 0;
 
     function current() {
         return tokens[position];
@@ -68,6 +71,16 @@ export function parse(source, tokens) {
             return fail(message);
         }
         return advance();
+    }
+
+    function parseNested(parseNode) {
+        if (nestingDepth >= MAX_SYNTAX_DEPTH) {
+            return fail(`Source nesting exceeds limit ${MAX_SYNTAX_DEPTH}.`);
+        }
+        nestingDepth += 1;
+        const node = parseNode();
+        nestingDepth -= 1;
+        return node;
     }
 
     function parsePrimary() {
@@ -105,7 +118,7 @@ export function parse(source, tokens) {
 
         if (token?.kind === TokenKind.LeftParen) {
             const leftParen = advance();
-            const expression = parseExpression();
+            const expression = parseNested(parseExpression);
             if (expression === null) {
                 return null;
             }
@@ -126,7 +139,7 @@ export function parse(source, tokens) {
         }
 
         const operatorToken = advance();
-        const argument = parseUnary();
+        const argument = parseNested(parseUnary);
         if (argument === null) {
             return null;
         }
@@ -190,7 +203,7 @@ export function parse(source, tokens) {
         }
 
         advance();
-        const value = parseAssignment();
+        const value = parseNested(parseAssignment);
         if (value === null) {
             return null;
         }
@@ -258,7 +271,7 @@ export function parse(source, tokens) {
             current()?.kind !== TokenKind.Eof &&
             diagnostic === null
         ) {
-            const statement = parseStatement();
+            const statement = parseNested(parseStatement);
             if (statement !== null) {
                 body.push(statement);
             }
@@ -297,7 +310,7 @@ export function parse(source, tokens) {
         if (current()?.kind === TokenKind.Else) {
             advance();
             alternate = current()?.kind === TokenKind.If
-                ? parseIfStatement()
+                ? parseNested(parseIfStatement)
                 : parseBlockStatement();
             if (alternate === null) {
                 return null;
@@ -352,6 +365,26 @@ export function parse(source, tokens) {
         const statement = parseStatement();
         if (statement !== null) {
             body.push(statement);
+        }
+    }
+
+    // Iterative binary parsing can build a deep tree without deep parser calls.
+    // Bound the tree before the recursive analyzer and emitter see it.
+    const pending = body.map((node) => ({ node, depth: 1 }));
+    while (pending.length > 0 && diagnostic === null) {
+        const { node, depth } = pending.pop();
+        if (depth > MAX_SYNTAX_DEPTH) {
+            fail(`Syntax tree depth exceeds limit ${MAX_SYNTAX_DEPTH}.`, node);
+            break;
+        }
+        for (const value of Object.values(node)) {
+            if (Array.isArray(value)) {
+                for (const child of value) {
+                    pending.push({ node: child, depth: depth + 1 });
+                }
+            } else if (value !== null && typeof value === "object") {
+                pending.push({ node: value, depth: depth + 1 });
+            }
         }
     }
 

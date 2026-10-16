@@ -93,27 +93,32 @@ function setRunState(label, state) {
 }
 
 function compileAndRun() {
-    const compilation = compile(sourceEditor.value);
-
-    if (!compilation.ok) {
-        resultOutput.textContent = "編譯失敗";
-        diagnosticsOutput.textContent = formatDiagnostics(compilation.diagnostics);
-        bytecodeOutput.textContent = "未產生 bytecode。";
-        setRunState("編譯失敗", "error");
-        return;
-    }
-
-    bytecodeOutput.textContent = JSON.stringify(compilation.program, null, 2);
-
+    let stage = "compiler";
     try {
+        const compilation = compile(sourceEditor.value);
+
+        if (!compilation.ok) {
+            resultOutput.textContent = "編譯失敗";
+            diagnosticsOutput.textContent = formatDiagnostics(compilation.diagnostics);
+            bytecodeOutput.textContent = "未產生 bytecode。";
+            setRunState("編譯失敗", "error");
+            return;
+        }
+
+        bytecodeOutput.textContent = JSON.stringify(compilation.program, null, 2);
+        stage = "runtime";
         const value = run(compilation.program);
         resultOutput.textContent = String(value);
         diagnosticsOutput.textContent = "沒有 diagnostics。";
         setRunState("執行成功", "success");
     } catch (error) {
-        resultOutput.textContent = "執行失敗";
-        diagnosticsOutput.textContent = `[runtime] ${error.message}`;
-        setRunState("執行失敗", "error");
+        const label = stage === "compiler" ? "編譯失敗" : "執行失敗";
+        resultOutput.textContent = label;
+        diagnosticsOutput.textContent = `[${stage}] ${error.message}`;
+        if (stage === "compiler") {
+            bytecodeOutput.textContent = "未產生 bytecode。";
+        }
+        setRunState(label, "error");
     }
 }
 
