@@ -1,24 +1,102 @@
-<!DOCTYPE html>
-<html>
-
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <title>JJ Reader Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta name="description" content="Edit JavaScript and run it through the JumpJet bytecode compiler and virtual machine.">
+    <title>JumpJet Studio</title>
+    <link rel="icon" href="web/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="web/styles.css">
 </head>
-
 <body>
-    <h1>JJ Reader Output</h1>
+    <a class="skip-link" href="#source-editor">跳至編輯器</a>
 
-    <div id="log"></div>
+    <header class="app-header">
+        <div class="brand">
+            <span class="brand-mark" aria-hidden="true">JJ</span>
+            <div>
+                <h1>JumpJet Studio</h1>
+                <p>JavaScript → bytecode → JumpJet VM</p>
+            </div>
+        </div>
+        <div id="save-status" class="save-status" role="status" aria-live="polite">
+            正在載入草稿
+        </div>
+    </header>
 
-    <!-- 這裡放你的 jj 原始碼 -->
-    <script id="jj" type="text/plain">abcd</script>
+    <main class="workspace">
+        <section class="editor-panel" aria-labelledby="editor-title">
+            <div class="panel-header editor-header">
+                <div class="document-name">
+                    <label class="visually-hidden" for="file-name">檔案名稱</label>
+                    <span class="file-dot" aria-hidden="true"></span>
+                    <input id="file-name" type="text" value="main.js" spellcheck="false" autocomplete="off">
+                </div>
+                <div class="toolbar" aria-label="文件操作">
+                    <button id="save-button" class="button" type="button">保存草稿</button>
+                    <label class="button file-button" for="import-input">匯入 .js</label>
+                    <input id="import-input" class="visually-hidden" type="file" accept=".js,text/javascript,application/javascript">
+                    <button id="download-button" class="button" type="button">下載 .js</button>
+                    <button id="run-button" class="button button-primary" type="button">
+                        <span aria-hidden="true">▶</span>
+                        編譯並執行
+                    </button>
+                </div>
+            </div>
 
-    <!-- 載入 jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+            <h2 id="editor-title" class="visually-hidden">JavaScript 編輯器</h2>
+            <div class="editor-shell">
+                <pre id="line-numbers" class="line-numbers" aria-hidden="true">1</pre>
+                <textarea id="source-editor" aria-label="JavaScript 原始碼" aria-describedby="editor-help" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+            </div>
+            <div class="editor-status">
+                <span id="cursor-position">行 1，欄 1</span>
+                <span id="document-size">0 bytes</span>
+                <span id="editor-help">Ctrl / ⌘ + Enter 執行 · Tab 插入四個空格</span>
+            </div>
+        </section>
 
-    <!-- 載入你的 reader.js -->
-    <script src="reader.js"></script>
+        <aside class="output-panel" aria-label="編譯結果">
+            <section class="output-card result-card">
+                <div class="output-heading">
+                    <div>
+                        <span class="eyebrow">VM output</span>
+                        <h2>執行結果</h2>
+                    </div>
+                    <span id="run-state" class="run-state">尚未執行</span>
+                </div>
+                <pre id="result-output" class="result-output" aria-live="polite">按下「編譯並執行」查看結果。</pre>
+            </section>
+
+            <section class="output-card">
+                <div class="output-heading">
+                    <div>
+                        <span class="eyebrow">Compiler</span>
+                        <h2>Diagnostics</h2>
+                    </div>
+                </div>
+                <pre id="diagnostics-output" class="diagnostics-output" aria-live="polite">尚無 diagnostics。</pre>
+            </section>
+
+            <section class="output-card bytecode-card">
+                <div class="output-heading">
+                    <div>
+                        <span class="eyebrow">Artifact</span>
+                        <h2>Bytecode</h2>
+                    </div>
+                </div>
+                <pre id="bytecode-output" class="bytecode-output">尚未產生 bytecode。</pre>
+            </section>
+        </aside>
+    </main>
+
+    <footer class="app-footer">
+        <span>JumpJet 0.1</span>
+        <span>目前支援 let、數字、變數、括號與四則運算</span>
+        <span>本機編譯，原始碼不會上傳</span>
+    </footer>
+
+    <script type="module" src="web/app.js"></script>
 </body>
-
 </html>
