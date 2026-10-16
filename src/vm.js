@@ -15,8 +15,8 @@ function validateProgram(program) {
         throw new TypeError("Bytecode constants must be an array.");
     }
     program.constants.forEach((constant, index) => {
-        if (typeof constant !== "number") {
-            throw new TypeError(`Bytecode constant ${index} must be a number.`);
+        if (typeof constant !== "number" && typeof constant !== "boolean") {
+            throw new TypeError(`Bytecode constant ${index} must be a number or boolean.`);
         }
     });
     if (!Array.isArray(program.code)) {
@@ -60,6 +60,19 @@ export function execute(program) {
         stack.push(operation(left, right));
     }
 
+    function executeUnary(opcodeName, operation) {
+        requireStack(1, opcodeName);
+        stack.push(operation(stack.pop()));
+    }
+
+    function readJumpTarget(opcodeName) {
+        const target = readOperand(opcodeName);
+        if (target > program.code.length) {
+            throw new RangeError(`Jump target ${target} is out of bounds.`);
+        }
+        return target;
+    }
+
     while (instructionPointer < program.code.length) {
         const opcode = program.code[instructionPointer];
         instructionPointer += 1;
@@ -90,6 +103,33 @@ export function execute(program) {
             case Opcode.Divide:
                 executeBinary(opcodeName, (left, right) => left / right);
                 break;
+            case Opcode.Negate:
+                executeUnary(opcodeName, (value) => -value);
+                break;
+            case Opcode.Positive:
+                executeUnary(opcodeName, (value) => +value);
+                break;
+            case Opcode.Not:
+                executeUnary(opcodeName, (value) => !value);
+                break;
+            case Opcode.Equal:
+                executeBinary(opcodeName, (left, right) => left === right);
+                break;
+            case Opcode.NotEqual:
+                executeBinary(opcodeName, (left, right) => left !== right);
+                break;
+            case Opcode.Less:
+                executeBinary(opcodeName, (left, right) => left < right);
+                break;
+            case Opcode.LessEqual:
+                executeBinary(opcodeName, (left, right) => left <= right);
+                break;
+            case Opcode.Greater:
+                executeBinary(opcodeName, (left, right) => left > right);
+                break;
+            case Opcode.GreaterEqual:
+                executeBinary(opcodeName, (left, right) => left >= right);
+                break;
             case Opcode.StoreSlot: {
                 const slot = readOperand(opcodeName);
                 if (slot >= slots.length) {
@@ -111,6 +151,22 @@ export function execute(program) {
                 stack.push(slots[slot]);
                 break;
             }
+            case Opcode.Duplicate:
+                requireStack(1, opcodeName);
+                stack.push(stack.at(-1));
+                break;
+            case Opcode.JumpIfFalse: {
+                const target = readJumpTarget(opcodeName);
+                requireStack(1, opcodeName);
+                const condition = stack.pop();
+                if (!condition) {
+                    instructionPointer = target;
+                }
+                break;
+            }
+            case Opcode.Jump:
+                instructionPointer = readJumpTarget(opcodeName);
+                break;
             case Opcode.Pop:
                 requireStack(1, opcodeName);
                 stack.pop();

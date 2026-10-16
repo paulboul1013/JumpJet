@@ -5,66 +5,58 @@ const binaryOpcodes = Object.freeze({
     "-": Opcode.Subtract,
     "*": Opcode.Multiply,
     "/": Opcode.Divide,
+    "===": Opcode.Equal,
+    "!==": Opcode.NotEqual,
+    "<": Opcode.Less,
+    "<=": Opcode.LessEqual,
+    ">": Opcode.Greater,
+    ">=": Opcode.GreaterEqual,
 });
 
-export function emit(ast) {
-    if (ast?.type !== "Program" || !Array.isArray(ast.body)) {
-        throw new TypeError("Expected a Program AST.");
-    }
+const unaryOpcodes = Object.freeze({
+    "-": Opcode.Negate,
+    "+": Opcode.Positive,
+    "!": Opcode.Not,
+});
 
-    const lastStatement = ast.body.at(-1);
-    if (lastStatement?.type !== "ExpressionStatement") {
-        return {
-            ok: false,
-            diagnostics: [
-                {
-                    stage: "compiler",
-                    message: "Program must end with an expression statement.",
-                    start: ast.start,
-                    end: ast.end,
-                },
-            ],
-        };
+export function emit(boundProgram) {
+    if (
+        boundProgram?.type !== "BoundProgram" ||
+        !Array.isArray(boundProgram.body) ||
+        !Number.isSafeInteger(boundProgram.slotCount) ||
+        boundProgram.slotCount < 0
+    ) {
+        throw new TypeError("Expected a BoundProgram.");
     }
 
     const constants = [];
     const code = [];
-    const slots = new Map();
-    let diagnostic = null;
 
-    function fail(message, node) {
-        if (diagnostic === null) {
-            diagnostic = {
-                stage: "compiler",
-                message,
-                start: node.start,
-                end: node.end,
-            };
-        }
+    function emitConstant(value) {
+        const constantIndex = constants.length;
+        constants.push(value);
+        code.push(Opcode.Constant, constantIndex);
     }
 
     function emitExpression(expression) {
-        if (diagnostic !== null) {
-            return;
-        }
-
         switch (expression.type) {
-            case "NumericLiteral": {
-                const constantIndex = constants.length;
-                constants.push(expression.value);
-                code.push(Opcode.Constant, constantIndex);
+            case "BoundNumericLiteral":
+            case "BoundBooleanLiteral":
+                emitConstant(expression.value);
                 return;
-            }
-            case "Identifier": {
-                const slot = slots.get(expression.name);
-                if (slot === undefined) {
-                    fail(`Unknown identifier '${expression.name}'.`, expression);
-                    return;
+            case "BoundIdentifier":
+                code.push(Opcode.LoadSlot, expression.slot);
+                return;
+            case "BoundUnaryExpression": {
+                emitExpression(expression.argument);
+                const opcode = unaryOpcodes[expression.operator];
+                if (opcode === undefined) {
+                    throw new TypeError(`Unsupported unary operator '${expression.operator}'.`);
                 }
-                code.push(Opcode.LoadSlot, slot);
+                code.push(opcode);
                 return;
             }
-            case "BinaryExpression": {
+            case "BoundBinaryExpression": {
                 emitExpression(expression.left);
                 emitExpression(expression.right);
                 const opcode = binaryOpcodes[expression.operator];
@@ -74,48 +66,57 @@ export function emit(ast) {
                 code.push(opcode);
                 return;
             }
+            case "BoundAssignmentExpression":
+                emitExpression(expression.value);
+                code.push(Opcode.Duplicate, Opcode.StoreSlot, expression.slot);
+                return;
             default:
-                throw new TypeError(`Unsupported expression type '${expression.type}'.`);
+                throw new TypeError(`Unsupported bound expression type '${expression.type}'.`);
         }
     }
 
-    ast.body.forEach((statement, index) => {
-        if (diagnostic !== null) {
-            return;
-        }
+    function emitJump(opcode) {
+        code.push(opcode, 0);
+        return code.length - 1;
+    }
 
-        if (statement.type === "VariableDeclaration") {
-            if (slots.has(statement.id.name)) {
-                fail(`Identifier '${statement.id.name}' is already declared.`, statement.id);
+    function emitStatement(statement, returnsResult = false) {
+        switch (statement.type) {
+            case "BoundVariableDeclaration":
+                emitExpression(statement.init);
+                code.push(Opcode.StoreSlot, statement.slot);
+                return;
+            case "BoundExpressionStatement":
+                emitExpression(statement.expression);
+                code.push(returnsResult ? Opcode.Return : Opcode.Pop);
+                return;
+            case "BoundBlockStatement":
+                statement.body.forEach((child) => emitStatement(child));
+                return;
+            case "BoundIfStatement": {
+                emitExpression(statement.test);
+                const falseTargetOperand = emitJump(Opcode.JumpIfFalse);
+                emitStatement(statement.consequent);
+
+                if (statement.alternate === null) {
+                    code[falseTargetOperand] = code.length;
+                    return;
+                }
+
+                const endTargetOperand = emitJump(Opcode.Jump);
+                code[falseTargetOperand] = code.length;
+                emitStatement(statement.alternate);
+                code[endTargetOperand] = code.length;
                 return;
             }
-
-            emitExpression(statement.init);
-            if (diagnostic !== null) {
-                return;
-            }
-
-            const slot = slots.size;
-            slots.set(statement.id.name, slot);
-            code.push(Opcode.StoreSlot, slot);
-            return;
+            default:
+                throw new TypeError(`Unsupported bound statement type '${statement.type}'.`);
         }
+    }
 
-        if (statement.type === "ExpressionStatement") {
-            emitExpression(statement.expression);
-            if (diagnostic !== null) {
-                return;
-            }
-            code.push(index === ast.body.length - 1 ? Opcode.Return : Opcode.Pop);
-            return;
-        }
-
-        throw new TypeError(`Unsupported statement type '${statement.type}'.`);
+    boundProgram.body.forEach((statement, index) => {
+        emitStatement(statement, index === boundProgram.body.length - 1);
     });
-
-    if (diagnostic !== null) {
-        return { ok: false, diagnostics: [diagnostic] };
-    }
 
     return {
         ok: true,
@@ -123,7 +124,7 @@ export function emit(ast) {
             version: BYTECODE_VERSION,
             constants,
             code,
-            slotCount: slots.size,
+            slotCount: boundProgram.slotCount,
         },
     };
 }

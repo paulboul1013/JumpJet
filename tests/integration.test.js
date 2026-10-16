@@ -43,7 +43,43 @@ test("returns compiler diagnostics for unresolved names", () => {
     const result = compile("missing;");
 
     assert.equal(result.ok, false);
-    assert.equal(result.diagnostics[0].stage, "compiler");
+    assert.equal(result.diagnostics[0].stage, "analyzer");
+});
+
+test("compiles mutable state and conditional control flow", () => {
+    const result = compile(`
+        let score = 3;
+        if (score < 5) {
+            score = -score + 10;
+        } else {
+            score = 0;
+        }
+        score === 7;
+    `);
+
+    assert.equal(result.ok, true);
+    assert.equal(run(result.program), true);
+});
+
+test("preserves outer bindings when a block shadows a name", () => {
+    const result = compile("let value = 1; if (true) { const value = 4; value; } value;");
+
+    assert.equal(result.ok, true);
+    assert.equal(run(result.program), 1);
+});
+
+test("chained assignment stores and returns the assigned value", () => {
+    const result = compile("let first = 0; let second = 0; first = second = 4; first + second;");
+
+    assert.equal(result.ok, true);
+    assert.equal(run(result.program), 8);
+});
+
+test("takes the else branch for a false condition", () => {
+    const result = compile("let value = 0; if (false) { value = 1; } else { value = 2; } value;");
+
+    assert.equal(result.ok, true);
+    assert.equal(run(result.program), 2);
 });
 
 test("rejects non-string source at the public boundary", () => {

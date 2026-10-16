@@ -1,3 +1,4 @@
+import { analyze } from "./analyzer.js";
 import { emit } from "./compiler.js";
 import { tokenize } from "./lexer.js";
 import { parse } from "./parser.js";
@@ -18,7 +19,12 @@ export function compile(source) {
         return parsed;
     }
 
-    return emit(parsed.ast);
+    const analyzed = analyze(parsed.ast);
+    if (!analyzed.ok) {
+        return analyzed;
+    }
+
+    return emit(analyzed.program);
 }
 
 export function run(program) {

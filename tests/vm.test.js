@@ -69,6 +69,74 @@ test("rejects non-number constants at the VM boundary", () => {
                 code: [Opcode.Constant, 0, Opcode.Return],
                 slotCount: 0,
             }),
-        /Bytecode constant 0 must be a number/,
+        /Bytecode constant 0 must be a number or boolean/,
+    );
+});
+
+test("executes unary, comparison, and boolean opcodes", () => {
+    const value = execute({
+        version: 1,
+        constants: [2, 3],
+        code: [
+            Opcode.Constant, 0,
+            Opcode.Positive,
+            Opcode.Constant, 1,
+            Opcode.Less,
+            Opcode.Not,
+            Opcode.Not,
+            Opcode.Return,
+        ],
+        slotCount: 0,
+    });
+
+    assert.equal(value, true);
+});
+
+test("duplicates an assignment value before storing it", () => {
+    const value = execute({
+        version: 1,
+        constants: [4],
+        code: [
+            Opcode.Constant, 0,
+            Opcode.Duplicate,
+            Opcode.StoreSlot, 0,
+            Opcode.LoadSlot, 0,
+            Opcode.Add,
+            Opcode.Return,
+        ],
+        slotCount: 1,
+    });
+
+    assert.equal(value, 8);
+});
+
+test("executes conditional and unconditional jumps", () => {
+    const value = execute({
+        version: 1,
+        constants: [false, 1, 2],
+        code: [
+            Opcode.Constant, 0,
+            Opcode.JumpIfFalse, 8,
+            Opcode.Constant, 1,
+            Opcode.Jump, 10,
+            Opcode.Constant, 2,
+            Opcode.Return,
+        ],
+        slotCount: 0,
+    });
+
+    assert.equal(value, 2);
+});
+
+test("rejects jump targets outside the code array", () => {
+    assert.throws(
+        () =>
+            execute({
+                version: 1,
+                constants: [],
+                code: [Opcode.Jump, 3],
+                slotCount: 0,
+            }),
+        /Jump target 3 is out of bounds/,
     );
 });

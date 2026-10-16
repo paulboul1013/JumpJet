@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { analyze } from "../src/analyzer.js";
 import { Opcode } from "../src/bytecode.js";
 import { emit } from "../src/compiler.js";
 import { tokenize } from "../src/lexer.js";
@@ -11,7 +12,9 @@ function emitSource(source) {
     assert.equal(lexed.ok, true);
     const parsed = parse(source, lexed.tokens);
     assert.equal(parsed.ok, true);
-    return emit(parsed.ast);
+    const analyzed = analyze(parsed.ast);
+    assert.equal(analyzed.ok, true);
+    return emit(analyzed.program);
 }
 
 test("emits deterministic bytecode for declarations and arithmetic", () => {
@@ -56,43 +59,28 @@ test("discards non-final expression statement values", () => {
     ]);
 });
 
-test("reports an unknown identifier with its source span", () => {
-    const result = emitSource("missing;");
+test("emits and patches conditional branches", () => {
+    const result = emitSource(
+        "let value = 1; if (true) { value = 2; } else { value = 3; } value;",
+    );
 
-    assert.deepEqual(result, {
-        ok: false,
-        diagnostics: [
-            {
-                stage: "compiler",
-                message: "Unknown identifier 'missing'.",
-                start: 0,
-                end: 7,
-            },
-        ],
-    });
-});
-
-test("rejects duplicate declarations", () => {
-    const result = emitSource("let value = 1; let value = 2; value;");
-
-    assert.equal(result.ok, false);
-    assert.equal(result.diagnostics[0].message, "Identifier 'value' is already declared.");
-    assert.equal(result.diagnostics[0].start, 19);
-    assert.equal(result.diagnostics[0].end, 24);
-});
-
-test("requires a final expression statement", () => {
-    const result = emitSource("let value = 1;");
-
-    assert.deepEqual(result, {
-        ok: false,
-        diagnostics: [
-            {
-                stage: "compiler",
-                message: "Program must end with an expression statement.",
-                start: 0,
-                end: 14,
-            },
-        ],
-    });
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.program.constants, [1, true, 2, 3]);
+    assert.deepEqual(result.program.code, [
+        Opcode.Constant, 0,
+        Opcode.StoreSlot, 0,
+        Opcode.Constant, 1,
+        Opcode.JumpIfFalse, 16,
+        Opcode.Constant, 2,
+        Opcode.Duplicate,
+        Opcode.StoreSlot, 0,
+        Opcode.Pop,
+        Opcode.Jump, 22,
+        Opcode.Constant, 3,
+        Opcode.Duplicate,
+        Opcode.StoreSlot, 0,
+        Opcode.Pop,
+        Opcode.LoadSlot, 0,
+        Opcode.Return,
+    ]);
 });

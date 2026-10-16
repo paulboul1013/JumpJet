@@ -48,3 +48,41 @@ test("reports an unexpected character at its source position", () => {
         ],
     });
 });
+
+test("tokenizes control-flow keywords, braces, and longest-match operators", () => {
+    const source = "const ready = true; if (!ready !== false) { ready === 1 <= 2 >= 0; } else {}";
+    const result = tokenize(source);
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(
+        result.tokens.map((token) => token.kind),
+        [
+            TokenKind.Const,
+            TokenKind.Identifier,
+            TokenKind.Equal,
+            TokenKind.True,
+            TokenKind.Semicolon,
+            TokenKind.If,
+            TokenKind.LeftParen,
+            TokenKind.Bang,
+            TokenKind.Identifier,
+            TokenKind.BangEqualEqual,
+            TokenKind.False,
+            TokenKind.RightParen,
+            TokenKind.LeftBrace,
+            TokenKind.Identifier,
+            TokenKind.EqualEqualEqual,
+            TokenKind.Number,
+            TokenKind.LessEqual,
+            TokenKind.Number,
+            TokenKind.GreaterEqual,
+            TokenKind.Number,
+            TokenKind.Semicolon,
+            TokenKind.RightBrace,
+            TokenKind.Else,
+            TokenKind.LeftBrace,
+            TokenKind.RightBrace,
+            TokenKind.Eof,
+        ],
+    );
+});

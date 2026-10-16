@@ -10,6 +10,24 @@ const multiplicativeOperators = Object.freeze({
     [TokenKind.Slash]: "/",
 });
 
+const comparisonOperators = Object.freeze({
+    [TokenKind.Less]: "<",
+    [TokenKind.LessEqual]: "<=",
+    [TokenKind.Greater]: ">",
+    [TokenKind.GreaterEqual]: ">=",
+});
+
+const equalityOperators = Object.freeze({
+    [TokenKind.EqualEqualEqual]: "===",
+    [TokenKind.BangEqualEqual]: "!==",
+});
+
+const unaryOperators = Object.freeze({
+    [TokenKind.Bang]: "!",
+    [TokenKind.Plus]: "+",
+    [TokenKind.Minus]: "-",
+});
+
 export function parse(source, tokens) {
     if (typeof source !== "string") {
         throw new TypeError("Source must be a string.");
@@ -65,6 +83,16 @@ export function parse(source, tokens) {
             };
         }
 
+        if (token?.kind === TokenKind.True || token?.kind === TokenKind.False) {
+            advance();
+            return {
+                type: "BooleanLiteral",
+                value: token.kind === TokenKind.True,
+                start: token.start,
+                end: token.end,
+            };
+        }
+
         if (token?.kind === TokenKind.Identifier) {
             advance();
             return {
@@ -89,6 +117,26 @@ export function parse(source, tokens) {
         }
 
         return fail("Expected an expression.", token);
+    }
+
+    function parseUnary() {
+        const operator = unaryOperators[current()?.kind];
+        if (operator === undefined) {
+            return parsePrimary();
+        }
+
+        const operatorToken = advance();
+        const argument = parseUnary();
+        if (argument === null) {
+            return null;
+        }
+        return {
+            type: "UnaryExpression",
+            operator,
+            argument,
+            start: operatorToken.start,
+            end: argument.end,
+        };
     }
 
     function parseBinary(parseOperand, operators) {
@@ -117,18 +165,54 @@ export function parse(source, tokens) {
     }
 
     function parseMultiplicative() {
-        return parseBinary(parsePrimary, multiplicativeOperators);
+        return parseBinary(parseUnary, multiplicativeOperators);
     }
 
-    function parseExpression() {
+    function parseAdditive() {
         return parseBinary(parseMultiplicative, additiveOperators);
     }
 
+    function parseComparison() {
+        return parseBinary(parseAdditive, comparisonOperators);
+    }
+
+    function parseEquality() {
+        return parseBinary(parseComparison, equalityOperators);
+    }
+
+    function parseAssignment() {
+        const target = parseEquality();
+        if (target === null || current()?.kind !== TokenKind.Equal) {
+            return target;
+        }
+        if (target.type !== "Identifier") {
+            return fail("Invalid assignment target.", target);
+        }
+
+        advance();
+        const value = parseAssignment();
+        if (value === null) {
+            return null;
+        }
+        return {
+            type: "AssignmentExpression",
+            target,
+            value,
+            start: target.start,
+            end: value.end,
+        };
+    }
+
+    function parseExpression() {
+        return parseAssignment();
+    }
+
     function parseVariableDeclaration() {
-        const letToken = advance();
+        const declarationToken = advance();
+        const kind = declarationToken.kind === TokenKind.Let ? "let" : "const";
         const identifierToken = consume(
             TokenKind.Identifier,
-            "Expected an identifier after 'let'.",
+            `Expected an identifier after '${kind}'.`,
         );
         if (identifierToken === null) {
             return null;
@@ -149,7 +233,7 @@ export function parse(source, tokens) {
 
         return {
             type: "VariableDeclaration",
-            kind: "let",
+            kind,
             id: {
                 type: "Identifier",
                 name: source.slice(identifierToken.start, identifierToken.end),
@@ -157,8 +241,76 @@ export function parse(source, tokens) {
                 end: identifierToken.end,
             },
             init,
-            start: letToken.start,
+            start: declarationToken.start,
             end: semicolon.end,
+        };
+    }
+
+    function parseBlockStatement() {
+        const leftBrace = consume(TokenKind.LeftBrace, "Expected '{' before block.");
+        if (leftBrace === null) {
+            return null;
+        }
+
+        const body = [];
+        while (
+            current()?.kind !== TokenKind.RightBrace &&
+            current()?.kind !== TokenKind.Eof &&
+            diagnostic === null
+        ) {
+            const statement = parseStatement();
+            if (statement !== null) {
+                body.push(statement);
+            }
+        }
+
+        const rightBrace = consume(TokenKind.RightBrace, "Expected '}' after block.");
+        if (rightBrace === null) {
+            return null;
+        }
+        return {
+            type: "BlockStatement",
+            body,
+            start: leftBrace.start,
+            end: rightBrace.end,
+        };
+    }
+
+    function parseIfStatement() {
+        const ifToken = advance();
+        if (consume(TokenKind.LeftParen, "Expected '(' after 'if'.") === null) {
+            return null;
+        }
+        const test = parseExpression();
+        if (test === null) {
+            return null;
+        }
+        if (consume(TokenKind.RightParen, "Expected ')' after if condition.") === null) {
+            return null;
+        }
+        const consequent = parseBlockStatement();
+        if (consequent === null) {
+            return null;
+        }
+
+        let alternate = null;
+        if (current()?.kind === TokenKind.Else) {
+            advance();
+            alternate = current()?.kind === TokenKind.If
+                ? parseIfStatement()
+                : parseBlockStatement();
+            if (alternate === null) {
+                return null;
+            }
+        }
+
+        return {
+            type: "IfStatement",
+            test,
+            consequent,
+            alternate,
+            start: ifToken.start,
+            end: alternate?.end ?? consequent.end,
         };
     }
 
@@ -181,12 +333,23 @@ export function parse(source, tokens) {
         };
     }
 
+    function parseStatement() {
+        switch (current()?.kind) {
+            case TokenKind.Let:
+            case TokenKind.Const:
+                return parseVariableDeclaration();
+            case TokenKind.If:
+                return parseIfStatement();
+            case TokenKind.LeftBrace:
+                return parseBlockStatement();
+            default:
+                return parseExpressionStatement();
+        }
+    }
+
     const body = [];
     while (current()?.kind !== TokenKind.Eof && diagnostic === null) {
-        const statement =
-            current()?.kind === TokenKind.Let
-                ? parseVariableDeclaration()
-                : parseExpressionStatement();
+        const statement = parseStatement();
         if (statement !== null) {
             body.push(statement);
         }

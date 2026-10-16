@@ -3,7 +3,14 @@ export const MAX_IMPORT_BYTES = 1_000_000;
 
 export const DEFAULT_DOCUMENT = Object.freeze({
     name: "main.js",
-    source: "let answer = 1 + 2 * 3;\nanswer;\n",
+    source: `let score = 3;
+if (score < 5) {
+    score = -score + 10;
+} else {
+    score = 0;
+}
+score === 7;
+`,
 });
 
 function isDocument(value) {

@@ -10,6 +10,7 @@
     "test": "node --test",
     "check": "node --check src/*.js && node --check web/*.js && node --check tests/*.js && node --check examples/*.js",
     "demo": "node examples/arithmetic.js",
+    "demo:control-flow": "node examples/control-flow.js",
     "dev": "python3 -m http.server 8000 --bind 127.0.0.1"
   }
 }
