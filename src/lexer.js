@@ -145,7 +145,7 @@ export function tokenize(source) {
             }
 
             const text = source.slice(start, position);
-            const kind = keywords[text] ?? TokenKind.Identifier;
+            const kind = Object.hasOwn(keywords, text) ? keywords[text] : TokenKind.Identifier;
             tokens.push(makeToken(kind, start, position));
             continue;
         }

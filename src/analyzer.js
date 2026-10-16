@@ -18,7 +18,7 @@ export function analyze(ast) {
         };
     }
 
-    const scopes = [new Map()];
+    const scopes = [];
     let slotCount = 0;
     let diagnostic = null;
 
@@ -127,20 +127,7 @@ export function analyze(ast) {
     function analyzeStatement(statement) {
         switch (statement.type) {
             case "VariableDeclaration": {
-                const scope = scopes.at(-1);
-                if (scope.has(statement.id.name)) {
-                    return fail(
-                        `Identifier '${statement.id.name}' is already declared in this scope.`,
-                        statement.id,
-                    );
-                }
-                const binding = {
-                    kind: statement.kind,
-                    slot: slotCount,
-                    initialized: false,
-                };
-                slotCount += 1;
-                scope.set(statement.id.name, binding);
+                const binding = scopes.at(-1).get(statement.id.name);
                 const init = analyzeExpression(statement.init);
                 if (init === null) {
                     return null;
@@ -167,17 +154,8 @@ export function analyze(ast) {
                     };
             }
             case "BlockStatement": {
-                scopes.push(new Map());
-                const body = [];
-                for (const child of statement.body) {
-                    const boundChild = analyzeStatement(child);
-                    if (boundChild === null) {
-                        break;
-                    }
-                    body.push(boundChild);
-                }
-                scopes.pop();
-                return diagnostic === null
+                const body = analyzeBody(statement.body);
+                return body !== null
                     ? {
                         type: "BoundBlockStatement",
                         body,
@@ -215,16 +193,42 @@ export function analyze(ast) {
         }
     }
 
-    const body = [];
-    for (const statement of ast.body) {
-        const boundStatement = analyzeStatement(statement);
-        if (boundStatement === null) {
-            break;
+    function analyzeBody(statements) {
+        const scope = new Map();
+        // Lexical declarations shadow outer names throughout their scope.
+        for (const statement of statements) {
+            if (statement.type !== "VariableDeclaration") {
+                continue;
+            }
+            if (scope.has(statement.id.name)) {
+                return fail(
+                    `Identifier '${statement.id.name}' is already declared in this scope.`,
+                    statement.id,
+                );
+            }
+            scope.set(statement.id.name, {
+                kind: statement.kind,
+                slot: slotCount,
+                initialized: false,
+            });
+            slotCount += 1;
         }
-        body.push(boundStatement);
+
+        scopes.push(scope);
+        const body = [];
+        for (const statement of statements) {
+            const boundStatement = analyzeStatement(statement);
+            if (boundStatement === null) {
+                break;
+            }
+            body.push(boundStatement);
+        }
+        scopes.pop();
+        return diagnostic === null ? body : null;
     }
 
-    if (diagnostic !== null) {
+    const body = analyzeBody(ast.body);
+    if (body === null) {
         return { ok: false, diagnostics: [diagnostic] };
     }
 
