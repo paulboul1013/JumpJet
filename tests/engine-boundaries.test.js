@@ -8,7 +8,7 @@ import { tokenize, TokenKind } from "../src/lexer.js";
 import { execute } from "../src/vm.js";
 
 function program(code, constants = [], slotCount = 0) {
-    return { version: 1, constants, code, slotCount };
+    return { version: 2, functions: [], constants, code, slotCount };
 }
 
 for (const [name, source] of [
@@ -132,7 +132,7 @@ for (const entry of ["execute", "run"]) {
             import assert from "node:assert/strict";
             import { ${entry} } from ${JSON.stringify(moduleUrl)};
             assert.throws(
-                () => ${entry}({version: 1, constants: [], code: [${Opcode.Jump}, 0], slotCount: 0}, {maxInstructions: 20}),
+                () => ${entry}({version: 2, functions: [], constants: [], code: [${Opcode.Jump}, 0], slotCount: 0}, {maxInstructions: 20}),
                 error => error instanceof RangeError && /Instruction budget/.test(error.message),
             );
             console.log("instruction budget enforced");
@@ -231,7 +231,7 @@ for (const [name, entry] of [["execute", execute], ["run", run]]) {
             import assert from "node:assert/strict";
             import { ${name} } from ${JSON.stringify(moduleUrl)};
             assert.throws(
-                () => ${name}({version: 1, constants: [], code: [${Opcode.Jump}, 0], slotCount: 0}),
+                () => ${name}({version: 2, functions: [], constants: [], code: [${Opcode.Jump}, 0], slotCount: 0}),
                 error => error instanceof RangeError && /Instruction budget/.test(error.message),
             );
             console.log("default instruction budget enforced");

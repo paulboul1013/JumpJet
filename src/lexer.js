@@ -1,168 +1,104 @@
-export const TokenKind = Object.freeze({
-    Number: "Number",
-    Identifier: "Identifier",
-    Let: "Let",
-    Const: "Const",
-    True: "True",
-    False: "False",
-    If: "If",
-    Else: "Else",
-    Plus: "Plus",
-    Minus: "Minus",
-    Star: "Star",
-    Slash: "Slash",
-    Bang: "Bang",
-    Equal: "Equal",
-    EqualEqualEqual: "EqualEqualEqual",
-    BangEqualEqual: "BangEqualEqual",
-    Less: "Less",
-    LessEqual: "LessEqual",
-    Greater: "Greater",
-    GreaterEqual: "GreaterEqual",
-    LeftParen: "LeftParen",
-    RightParen: "RightParen",
-    LeftBrace: "LeftBrace",
-    RightBrace: "RightBrace",
-    Semicolon: "Semicolon",
-    Eof: "Eof",
+import { rtFreeze, rtPush, rtSlice, rtType, rtTrap, rtWhitespace } from "./runtime.js";
+
+export const TokenKind = rtFreeze({
+    Number: "Number", String: "String", Identifier: "Identifier",
+    Let: "Let", Const: "Const", True: "True", False: "False", Null: "Null",
+    Undefined: "Undefined", If: "If", Else: "Else", While: "While",
+    Function: "Function", Return: "Return", Plus: "Plus", Minus: "Minus",
+    Star: "Star", Slash: "Slash", Bang: "Bang", Equal: "Equal",
+    EqualEqualEqual: "EqualEqualEqual", BangEqualEqual: "BangEqualEqual",
+    Less: "Less", LessEqual: "LessEqual", Greater: "Greater", GreaterEqual: "GreaterEqual",
+    And: "And", Or: "Or", LeftParen: "LeftParen", RightParen: "RightParen",
+    LeftBrace: "LeftBrace", RightBrace: "RightBrace", LeftBracket: "LeftBracket",
+    RightBracket: "RightBracket", Semicolon: "Semicolon", Comma: "Comma",
+    Colon: "Colon", Dot: "Dot", Eof: "Eof"
 });
-
-const singleCharacterTokens = Object.freeze({
-    "+": TokenKind.Plus,
-    "-": TokenKind.Minus,
-    "*": TokenKind.Star,
-    "/": TokenKind.Slash,
-    "!": TokenKind.Bang,
-    "=": TokenKind.Equal,
-    "<": TokenKind.Less,
-    ">": TokenKind.Greater,
-    "(": TokenKind.LeftParen,
-    ")": TokenKind.RightParen,
-    "{": TokenKind.LeftBrace,
-    "}": TokenKind.RightBrace,
-    ";": TokenKind.Semicolon,
-});
-
-const multiCharacterTokens = Object.freeze([
-    ["===", TokenKind.EqualEqualEqual],
-    ["!==", TokenKind.BangEqualEqual],
-    ["<=", TokenKind.LessEqual],
-    [">=", TokenKind.GreaterEqual],
-]);
-
-const keywords = Object.freeze({
-    let: TokenKind.Let,
-    const: TokenKind.Const,
-    true: TokenKind.True,
-    false: TokenKind.False,
-    if: TokenKind.If,
-    else: TokenKind.Else,
-});
-
-function isDigit(character) {
-    return character >= "0" && character <= "9";
+const lexerSymbols = [
+    ["===", "EqualEqualEqual"], ["!==", "BangEqualEqual"], ["<=", "LessEqual"],
+    [">=", "GreaterEqual"], ["&&", "And"], ["||", "Or"],
+    ["+", "Plus"], ["-", "Minus"], ["*", "Star"], ["/", "Slash"], ["!", "Bang"],
+    ["=", "Equal"], ["<", "Less"], [">", "Greater"], ["(", "LeftParen"],
+    [")", "RightParen"], ["{", "LeftBrace"], ["}", "RightBrace"],
+    ["[", "LeftBracket"], ["]", "RightBracket"], [";", "Semicolon"],
+    [",", "Comma"], [":", "Colon"], [".", "Dot"]
+];
+const lexerKeywords = [
+    ["let", "Let"], ["const", "Const"], ["true", "True"], ["false", "False"],
+    ["null", "Null"], ["undefined", "Undefined"], ["if", "If"], ["else", "Else"],
+    ["while", "While"], ["function", "Function"], ["return", "Return"]
+];
+function lexDigit(c) { return c >= "0" && c <= "9"; }
+function lexNameStart(c) {
+    return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || c === "_" || c === "$";
 }
-
-function isIdentifierStart(character) {
-    return (
-        (character >= "a" && character <= "z") ||
-        (character >= "A" && character <= "Z") ||
-        character === "_" ||
-        character === "$"
-    );
+function lexNamePart(c) { return lexNameStart(c) || lexDigit(c); }
+function lexToken(kind, start, end) { return rtFreeze({kind: kind, start: start, end: end}); }
+function lexFail(message, start, end) {
+    return {ok: false, diagnostics: [{stage: "lexer", message: message, start: start, end: end}]};
 }
-
-function isIdentifierPart(character) {
-    return isIdentifierStart(character) || isDigit(character);
-}
-
-function makeToken(kind, start, end) {
-    return Object.freeze({ kind, start, end });
-}
-
 export function tokenize(source) {
-    if (typeof source !== "string") {
-        throw new TypeError("Source must be a string.");
-    }
-
+    if (rtType(source) !== "string") { rtTrap("Source must be a string."); }
     const tokens = [];
-    let position = 0;
-
-    while (position < source.length) {
-        const character = source[position];
-
-        if (/\s/u.test(character)) {
-            position += 1;
-            continue;
-        }
-
-        const multiCharacterToken = multiCharacterTokens.find(([text]) =>
-            source.startsWith(text, position),
-        );
-        if (multiCharacterToken !== undefined) {
-            const [text, kind] = multiCharacterToken;
-            tokens.push(makeToken(kind, position, position + text.length));
-            position += text.length;
-            continue;
-        }
-
-        const singleCharacterKind = singleCharacterTokens[character];
-        if (singleCharacterKind !== undefined) {
-            tokens.push(makeToken(singleCharacterKind, position, position + 1));
-            position += 1;
-            continue;
-        }
-
-        if (isDigit(character)) {
-            const start = position;
-            position += 1;
-
-            while (position < source.length && isDigit(source[position])) {
-                position += 1;
+    let p = 0;
+    while (p < source.length) {
+        const c = source[p];
+        const start = p;
+        if (rtWhitespace(c)) {
+            p = p + 1;
+        } else if (c === "/" && source[p + 1] === "/") {
+            p = p + 2;
+            while (p < source.length && source[p] !== "\n" && source[p] !== "\r" && source[p] !== "\u2028" && source[p] !== "\u2029") { p = p + 1; }
+        } else if (c === "/" && source[p + 1] === "*") {
+            p = p + 2;
+            while (p < source.length && !(source[p] === "*" && source[p + 1] === "/")) { p = p + 1; }
+            if (p >= source.length) { return lexFail("Unterminated block comment.", start, p); }
+            p = p + 2;
+        } else if (c === "'" || c === '"') {
+            p = p + 1;
+            let closed = false;
+            while (p < source.length && !closed) {
+                if (source[p] === c) { closed = true; }
+                else if (source[p] === "\n" || source[p] === "\r" || source[p] === "\u2028" || source[p] === "\u2029") {
+                    return lexFail("Unterminated string literal.", start, p);
+                } else if (source[p] === "\\") { p = p + 1; }
+                p = p + 1;
             }
-
-            if (
-                source[position] === "." &&
-                position + 1 < source.length &&
-                isDigit(source[position + 1])
-            ) {
-                position += 2;
-                while (position < source.length && isDigit(source[position])) {
-                    position += 1;
+            if (!closed) { return lexFail("Unterminated string literal.", start, source.length); }
+            rtPush(tokens, lexToken(TokenKind.String, start, p));
+        } else if (lexDigit(c)) {
+            p = p + 1;
+            while (p < source.length && lexDigit(source[p])) { p = p + 1; }
+            if (source[p] === "." && p + 1 < source.length && lexDigit(source[p + 1])) {
+                p = p + 2;
+                while (p < source.length && lexDigit(source[p])) { p = p + 1; }
+            }
+            rtPush(tokens, lexToken(TokenKind.Number, start, p));
+        } else if (lexNameStart(c)) {
+            p = p + 1;
+            while (p < source.length && lexNamePart(source[p])) { p = p + 1; }
+            const text = rtSlice(source, start, p);
+            let kind = TokenKind.Identifier;
+            let k = 0;
+            while (k < lexerKeywords.length) {
+                if (lexerKeywords[k][0] === text) { kind = lexerKeywords[k][1]; }
+                k = k + 1;
+            }
+            rtPush(tokens, lexToken(kind, start, p));
+        } else {
+            let k = 0;
+            let matched = false;
+            while (k < lexerSymbols.length && !matched) {
+                const symbol = lexerSymbols[k];
+                if (rtSlice(source, p, p + symbol[0].length) === symbol[0]) {
+                    p = p + symbol[0].length;
+                    rtPush(tokens, lexToken(symbol[1], start, p));
+                    matched = true;
                 }
+                k = k + 1;
             }
-
-            tokens.push(makeToken(TokenKind.Number, start, position));
-            continue;
+            if (!matched) { return lexFail("Unexpected character '" + c + "'.", p, p + 1); }
         }
-
-        if (isIdentifierStart(character)) {
-            const start = position;
-            position += 1;
-
-            while (position < source.length && isIdentifierPart(source[position])) {
-                position += 1;
-            }
-
-            const text = source.slice(start, position);
-            const kind = Object.hasOwn(keywords, text) ? keywords[text] : TokenKind.Identifier;
-            tokens.push(makeToken(kind, start, position));
-            continue;
-        }
-
-        return {
-            ok: false,
-            diagnostics: [
-                {
-                    stage: "lexer",
-                    message: `Unexpected character '${character}'.`,
-                    start: position,
-                    end: position + 1,
-                },
-            ],
-        };
     }
-
-    tokens.push(makeToken(TokenKind.Eof, source.length, source.length));
-    return { ok: true, tokens: Object.freeze(tokens) };
+    rtPush(tokens, lexToken(TokenKind.Eof, p, p));
+    return {ok: true, tokens: rtFreeze(tokens)};
 }

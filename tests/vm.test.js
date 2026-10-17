@@ -6,7 +6,7 @@ import { execute } from "../src/vm.js";
 
 test("executes constants, slots, and arithmetic", () => {
     const value = execute({
-        version: 1,
+        version: 2, functions: [],
         constants: [2, 3],
         code: [
             Opcode.Constant,
@@ -35,14 +35,14 @@ test("rejects an unsupported bytecode version", () => {
 
 test("rejects an unknown opcode", () => {
     assert.throws(
-        () => execute({ version: 1, constants: [], code: [999], slotCount: 0 }),
+        () => execute({ version: 2, functions: [], constants: [], code: [999], slotCount: 0 }),
         /Unknown opcode 999/,
     );
 });
 
 test("rejects stack underflow instead of producing a host value", () => {
     assert.throws(
-        () => execute({ version: 1, constants: [], code: [Opcode.Add], slotCount: 0 }),
+        () => execute({ version: 2, functions: [], constants: [], code: [Opcode.Add], slotCount: 0 }),
         /Stack underflow while executing Add/,
     );
 });
@@ -51,7 +51,7 @@ test("rejects operands outside program bounds", () => {
     assert.throws(
         () =>
             execute({
-                version: 1,
+                version: 2, functions: [],
                 constants: [],
                 code: [Opcode.Constant, 1],
                 slotCount: 0,
@@ -64,18 +64,18 @@ test("rejects non-number constants at the VM boundary", () => {
     assert.throws(
         () =>
             execute({
-                version: 1,
+                version: 2, functions: [],
                 constants: [{}],
                 code: [Opcode.Constant, 0, Opcode.Return],
                 slotCount: 0,
             }),
-        /Bytecode constant 0 must be a number or boolean/,
+        /Bytecode constant 0 must be a scalar/,
     );
 });
 
 test("executes unary, comparison, and boolean opcodes", () => {
     const value = execute({
-        version: 1,
+        version: 2, functions: [],
         constants: [2, 3],
         code: [
             Opcode.Constant, 0,
@@ -94,7 +94,7 @@ test("executes unary, comparison, and boolean opcodes", () => {
 
 test("duplicates an assignment value before storing it", () => {
     const value = execute({
-        version: 1,
+        version: 2, functions: [],
         constants: [4],
         code: [
             Opcode.Constant, 0,
@@ -112,7 +112,7 @@ test("duplicates an assignment value before storing it", () => {
 
 test("executes conditional and unconditional jumps", () => {
     const value = execute({
-        version: 1,
+        version: 2, functions: [],
         constants: [false, 1, 2],
         code: [
             Opcode.Constant, 0,
@@ -132,7 +132,7 @@ test("rejects jump targets outside the code array", () => {
     assert.throws(
         () =>
             execute({
-                version: 1,
+                version: 2, functions: [],
                 constants: [],
                 code: [Opcode.Jump, 3],
                 slotCount: 0,

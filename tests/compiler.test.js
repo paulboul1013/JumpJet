@@ -23,7 +23,7 @@ test("emits deterministic bytecode for declarations and arithmetic", () => {
     assert.deepEqual(result, {
         ok: true,
         program: {
-            version: 1,
+            version: 2, functions: [],
             constants: [1, 2, 3],
             code: [
                 Opcode.Constant,

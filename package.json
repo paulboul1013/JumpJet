@@ -8,9 +8,12 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/*.js && node --check web/*.js && node --check tests/*.js && node --check examples/*.js",
+    "check": "node scripts/check-syntax.mjs",
     "demo": "node examples/arithmetic.js",
     "demo:control-flow": "node examples/control-flow.js",
-    "dev": "python3 -m http.server 8000 --bind 127.0.0.1"
+    "dev": "python3 -m http.server 8000 --bind 127.0.0.1",
+    "build:bootstrap": "node scripts/build-bootstrap.mjs",
+    "check:bootstrap": "node scripts/check-bootstrap-source.mjs",
+    "verify:self-hosting": "npm test && npm run check && npm run demo && npm run demo:control-flow && node scripts/verify-self-hosting.mjs"
   }
 }

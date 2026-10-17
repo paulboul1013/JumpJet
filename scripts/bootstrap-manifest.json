@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entry": "compileCore",
+  "modules": [
+    "src/runtime-symbols.js",
+    "src/bytecode.js",
+    "src/lexer.js",
+    "src/parser.js",
+    "src/analyzer.js",
+    "src/compiler.js",
+    "src/compiler-core.js"
+  ]
+}

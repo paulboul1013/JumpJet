@@ -1,3 +1,5 @@
 .playwright-cli/
 .understand-anything/
 node_modules/
+output/self-hosting/bundle/
+output/self-hosting/verification/
