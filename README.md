@@ -1,81 +1,75 @@
 <p align="center">
-  <img src="web/jumpjet-icon.png" width="200" alt="JumpJet bytecode-first JavaScript engine icon">
+  <img src="web/jumpjet-icon.png" width="200" alt="JumpJet icon">
 </p>
 
 # JumpJet
 
-JumpJet 是使用 JavaScript 實作自己的 bytecode-first JavaScript engine。它包含自己的 compiler、bytecode 格式與 VM，目前支援下方列出的 JavaScript 語言子集。
-
-Node.js 或瀏覽器是 JumpJet 的宿主環境，持續執行 compiler 與 VM 的 JavaScript 實作。使用者程式會先編譯成 JumpJet bytecode，再由 JumpJet VM 逐條解譯執行，不使用 `eval` 或 `Function` 執行使用者原始碼。
-
-Self-hosting 是後續目標，目前尚未完成。達成時，JumpJet compiler 的原始碼將能編譯成 JumpJet bytecode，並在 JumpJet VM 上執行，再次編譯自身。
+JumpJet 是以 JavaScript 實作的 JavaScript 引擎，支援部分 JavaScript 語法。程式會先編譯成 bytecode，再由自己的虛擬機執行。
 
 ## 使用方式
 
-1. 在專案目錄啟動本機伺服器：
+需要 Node.js 20 以上版本與 Python 3。在專案目錄啟動本機伺服器：
 
-   ```sh
-   npm run dev
-   ```
+```sh
+npm run dev
+```
 
-2. 用瀏覽器開啟 <http://127.0.0.1:8000/main.html>。
-3. 在左側編輯 JavaScript，然後按下「編譯並執行」。也可以按 Ctrl+Enter 或 Command+Enter。
-4. 在右側查看執行結果、編譯器 diagnostics 與 bytecode。
+用瀏覽器開啟 <http://127.0.0.1:8000/main.html>，在左側輸入 JavaScript，按下「編譯並執行」，或按 Ctrl+Enter / Command+Enter。右側會顯示執行結果、編譯錯誤與 bytecode。
 
-編輯器會自動在瀏覽器中保存草稿，也可以匯入或下載 `.js` 檔案。
+編輯器會自動保存草稿，也支援匯入與下載 `.js` 檔案。
 
 ## 支援的語法
 
-目前的語言切片支援：
+- 變數宣告：`let`、`const`
+- 基本值：數字、布林值、字串、`null`、`undefined`
+- 資料結構：連續陣列、固定欄位物件、欄位與索引讀寫、陣列與字串的 `length`
+- 運算：`+`、`-`、`*`、`/`、一元 `+`、一元 `-`、`!`
+- 比較：`<`、`<=`、`>`、`>=`、`===`、`!==`
+- 邏輯：短路運算 `&&`、`||`
+- 賦值：`=` 與鏈式賦值
+- 控制流程：區塊作用域、`if` / `else if` / `else`、`while`
+- 函式：頂層具名函式、參數、直接呼叫、宣告前呼叫、遞迴、互相遞迴、`return`
+- 其他：括號、行註解、區塊註解、字串跳脫字元
 
-- `let` 與 `const` 宣告
-- 數字、`true`、`false`、識別字與括號
-- `!`、一元 `+`、一元 `-`
-- `+`、`-`、`*`、`/`
-- `<`、`<=`、`>`、`>=`、`===`、`!==`
-- 賦值與鏈式賦值
-- block scope 與 `if` / `else if` / `else`
+宣告與運算式敘述必須以分號結尾；`if`、`else` 與 `while` 的本體必須使用大括號。程式最後必須是運算式敘述，其值就是執行結果。
 
-宣告與 expression statement 都必須以分號結尾。`if` 與 `else` 的本體必須使用大括號。程式最末必須是 expression statement，它的值就是 VM 的執行結果。
+函式只能宣告在頂層，呼叫時的引數數量必須與參數數量相同。不支援閉包、回呼或將函式當作值。
+
+## 語法範例
+
+變數與條件判斷，結果為 `7`：
 
 ```js
 let score = 3;
 if (score < 5) {
-    score = -score + 10;
+	score = -score + 10;
 } else {
-    score = 0;
+	score = 0;
 }
-score === 7;
+score;
 ```
 
-完整 EBNF、precedence、scope 規則、bytecode 指令與檔案職責請讀 [控制流與語意分析規格](docs/specs/0003-control-flow-and-semantic-analysis.md)。架構關係可從 [視覺化設計頁](docs/jumpjet-grammar-architecture.html) 查看。
+陣列、物件與迴圈，結果為 `6`：
 
-## Engine 架構
-
-```text
-source
-  -> lexer      tokens 與 source spans
-  -> parser     syntax AST
-  -> analyzer   scope、binding、const 與 slot
-  -> compiler   bound AST 到 bytecode
-  -> verifier   驗證完整指令、operand 與跳躍邊界
-  -> VM         在指令預算內執行 bytecode
+```js
+const numbers = [1, 2, 3];
+const result = { total: 0 };
+let i = 0;
+while (i < numbers.length) {
+	result.total = result.total + numbers[i];
+	i = i + 1;
+}
+result.total;
 ```
 
-`src/analyzer.js` 把來源名稱解析成 numeric slot，讓 `src/compiler.js` 只處理合法的 bound nodes 與指令選擇。`src/vm.js` 維護 instruction pointer、operand stack 與變數 slots，執行產生的 bytecode。
+函式與遞迴，結果為 `120`：
 
-`run(program, { maxInstructions: 1000 })` 可指定指令預算，預設為 1,000,000。parser 的語法巢狀深度與 AST 深度上限均為 128；超過上限會回傳 diagnostic。完整契約請讀 [engine 邊界規格](docs/specs/0004-engine-boundaries.md)。
-
-## 驗證
-
-```sh
-npm test
-npm run check
-npm run demo
-npm run demo:control-flow
+```js
+function factorial(n) {
+	if (n <= 1) {
+		return 1;
+	}
+	return n * factorial(n - 1);
+}
+factorial(5);
 ```
-
-- `npm test` 驗證每一個 compiler phase、VM 邊界與完整 source-to-result 流程。
-- `npm run check` 對 source、web、tests 與 examples 執行 JavaScript syntax check。
-- `npm run demo` 驗證原有算術切片沒有 regression。
-- `npm run demo:control-flow` 透過真實 compiler 與 VM 執行上面的控制流範例，預期結果為 `true`。
