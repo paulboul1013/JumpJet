@@ -1,0 +1,3 @@
+{
+  "result": "{\"ok\":true,\"cases\":[{\"name\":\"old-control-flow\",\"result\":\"true\",\"diagnostics\":\"沒有 diagnostics。\"},{\"name\":\"diagnostic\",\"result\":\"編譯失敗\",\"diagnostics\":\"[analyzer] Unknown identifier 'missing'.\\n位置 0–7\"},{\"name\":\"data-loop\",\"result\":\"6\",\"diagnostics\":\"沒有 diagnostics。\"},{\"name\":\"recursion\",\"result\":\"15\",\"diagnostics\":\"沒有 diagnostics。\"}],\"errors\":[]}"
+}

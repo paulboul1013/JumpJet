@@ -1,0 +1,130 @@
+{
+  "reportSource": "output/self-hosting/verification/report.json",
+  "reportSha256": "7313521bed11008de321c0b31578ae19e37436838e34ae4537f6148c2bab4b8d",
+  "sourceSha256": "54456a9abc9fd7e5ed7d6235152542a7901dae90daf87a19722d338aa5216937",
+  "executableEncodingSha256": "4fcf2c590dbc96abaa020470d6d5037556bcda3d8d655137240fd6f1300612bf",
+  "modules": [
+    {
+      "name": "src/runtime-symbols.js",
+      "sha256": "a7f7ca5228d978fe927d2017f8c3c02da56747e439e8be8f3ebf8bccf647508d"
+    },
+    {
+      "name": "src/bytecode.js",
+      "sha256": "72e3a80f60ec5e7874e6bd94a7c0e9da26a41e2a2f1d92f3c263c6943eb0d251"
+    },
+    {
+      "name": "src/lexer.js",
+      "sha256": "893b184f2378ffea27c374b8a2ee8da7a260bd824e61e65a241b0deefecb5420"
+    },
+    {
+      "name": "src/parser.js",
+      "sha256": "655a1ed84948ead9d9bce6927fe9218471bdc9bb691461322e255ff1002fd6cc"
+    },
+    {
+      "name": "src/analyzer.js",
+      "sha256": "d3037d7d6ebb8ba7f26ab2afc8684b407f25a117d27101e0f8ba41e53dfc72d6"
+    },
+    {
+      "name": "src/compiler.js",
+      "sha256": "b0a93b273f30eecbb4e2985b5f35730bc2a424de9535b7728cb72b767219585c"
+    },
+    {
+      "name": "src/compiler-core.js",
+      "sha256": "3fe1726df6c5c964c119e49489cf740839fba6bbf09472783a7ee06576741a94"
+    }
+  ],
+  "report": {
+    "ok": true,
+    "checks": 643,
+    "elapsedMs": 5705.308300000001,
+    "config": {
+      "maxInstructions": 100000000,
+      "maxCallDepth": 1024,
+      "maxValueSize": 1000000,
+      "maxSourceLength": 1000000,
+      "deadlineMs": 60000
+    }
+  },
+  "compiler": {
+    "functions": 49,
+    "constants": 2153,
+    "mainCodeWords": 1365,
+    "allCodeWords": 11630,
+    "staticOpcodes": 6782
+  },
+  "corpus": {
+    "valid": 20,
+    "invalid": 13
+  },
+  "phaseCalls": {
+    "compileCore": 108,
+    "tokenize": 108,
+    "parse": 102,
+    "analyze": 87,
+    "emit": 66,
+    "run": 63
+  },
+  "selfCompiles": [
+    {
+      "generation": "B1",
+      "entry": "compileCore",
+      "case": "compiler-S",
+      "elapsedMs": 630.5633,
+      "instructions": 13307643,
+      "work": 23191393,
+      "builtinCalls": 198956,
+      "maxFrames": 57
+    },
+    {
+      "generation": "B2",
+      "entry": "compileCore",
+      "case": "compiler-S",
+      "elapsedMs": 663.0678,
+      "instructions": 13307643,
+      "work": 23191393,
+      "builtinCalls": 198956,
+      "maxFrames": 57
+    },
+    {
+      "generation": "B3",
+      "entry": "compileCore",
+      "case": "compiler-S-final",
+      "elapsedMs": 597.6512999999995,
+      "instructions": 13307643,
+      "work": 23191393,
+      "builtinCalls": 198956,
+      "maxFrames": 57
+    }
+  ],
+  "regressionRecord": {
+    "source": "docs/plans/self-hosting-implementation.md",
+    "tests": 171,
+    "syntaxFiles": 37
+  },
+  "browser": {
+    "ok": true,
+    "cases": [
+      {
+        "name": "old-control-flow",
+        "result": "true",
+        "diagnostics": "沒有 diagnostics。"
+      },
+      {
+        "name": "diagnostic",
+        "result": "編譯失敗",
+        "diagnostics": "[analyzer] Unknown identifier 'missing'.\n位置 0–7"
+      },
+      {
+        "name": "data-loop",
+        "result": "6",
+        "diagnostics": "沒有 diagnostics。"
+      },
+      {
+        "name": "recursion",
+        "result": "15",
+        "diagnostics": "沒有 diagnostics。"
+      }
+    ],
+    "errors": []
+  }
+}

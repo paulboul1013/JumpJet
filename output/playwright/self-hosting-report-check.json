@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "panels": 8,
+  "svgCount": 5,
+  "geometry": [
+    {
+      "width": 494,
+      "height": 550,
+      "bounds": {
+        "x": 12,
+        "y": 8,
+        "width": 469.8999938964844,
+        "height": 538
+      },
+      "clipped": false
+    },
+    {
+      "width": 191,
+      "height": 459,
+      "bounds": {
+        "x": 15,
+        "y": 14,
+        "width": 160.89999389648438,
+        "height": 431
+      },
+      "clipped": false
+    },
+    {
+      "width": 555,
+      "height": 442,
+      "bounds": {
+        "x": 12,
+        "y": 8,
+        "width": 530.5999755859375,
+        "height": 430
+      },
+      "clipped": false
+    },
+    {
+      "width": 415,
+      "height": 575,
+      "bounds": {
+        "x": 14,
+        "y": 26,
+        "width": 386.4000244140625,
+        "height": 523
+      },
+      "clipped": false
+    },
+    {
+      "width": 611,
+      "height": 243,
+      "bounds": {
+        "x": 15,
+        "y": 14,
+        "width": 580.5,
+        "height": 215
+      },
+      "clipped": false
+    }
+  ],
+  "tableCount": 15,
+  "desktop": {
+    "width": 1440,
+    "viewport": 1440
+  },
+  "mobile": {
+    "width": 390,
+    "viewport": 390
+  },
+  "interactions": [
+    "dark mode",
+    "light mode",
+    "theme switch",
+    "table of contents"
+  ],
+  "errors": [],
+  "svgFiles": [
+    "docs/assets/self-hosting-implementation/01-generations.svg",
+    "docs/assets/self-hosting-implementation/02-compiler-pipeline.svg",
+    "docs/assets/self-hosting-implementation/03-call-frames.svg",
+    "docs/assets/self-hosting-implementation/04-host-boundary.svg",
+    "docs/assets/self-hosting-implementation/05-acceptance-proofs.svg"
+  ]
+}
